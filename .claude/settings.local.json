@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd /d D:\\\\AI-Vault)",
+      "Bash(dir /b)",
+      "Bash(cygpath -w /tmp/aiv/extracted/ai-memory-system)",
+      "Bash(unzip -l /tmp/aiv/ai-memory-system.zip)",
+      "Bash(rm -rf /tmp/v1)",
+      "Bash(mkdir -p /tmp/v1)",
+      "Bash(unzip -o \"files \\(1\\).zip\" -d /tmp/v1)",
+      "Bash(unzip -l /tmp/v1/ai-memory-system.zip)",
+      "Bash(rm -rf /tmp/v1/ex)",
+      "Bash(unzip -o /tmp/v1/ai-memory-system.zip -d /tmp/v1/ex)",
+      "Read(//tmp/v1/ex/ai-memory-system/automation/**)",
+      "Bash(cp -r /tmp/v1/ex/ai-memory-system/vault-structure/. 'D:\\\\AI-Vault/')",
+      "Bash(cp -r /tmp/v1/ex/ai-memory-system/automation 'D:\\\\AI-Vault/')",
+      "Bash(cp -r /tmp/v1/ex/ai-memory-system/docs 'D:\\\\AI-Vault/')",
+      "Bash(cp -r /tmp/v1/ex/ai-memory-system/project-template 'D:\\\\AI-Vault/')",
+      "Bash(cp -r /tmp/v1/ex/ai-memory-system/claude-config 'D:\\\\AI-Vault/')",
+      "Bash(command -v python3)"
+    ]
+  }
+}

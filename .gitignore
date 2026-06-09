@@ -1,0 +1,28 @@
+# --- Personal identity (kept local; copy the *.example.md files to start) ---
+/User/profile.md
+/User/coding-standards.md
+
+# --- Personal/work content: dated daily logs + generated project dashboards ---
+# (keep only the folder READMEs so the structure stays documented in the public template)
+/DailyLogs/*.md
+!/DailyLogs/README.md
+/Projects/*.md
+!/Projects/README.md
+
+# --- Obsidian per-machine state (plugin config IS shared; workspace is not) ---
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache/
+
+# --- OS / editor cruft ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Python ---
+__pycache__/
+*.pyc
+
+# --- Distribution archives ---
+*.zip
+*.tar.gz
