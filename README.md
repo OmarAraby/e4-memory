@@ -122,6 +122,16 @@ Windows wrappers: `automation/powershell/Ai-Memory.ps1 {daily|dashboard|archive|
 - Hooks run via **Git Bash** (`bash .claude/hooks/*.sh`) and call **`python3`** — both must be on PATH. Verified on Windows 11 with Python 3.14 + Git Bash.
 - `.gitattributes` should pin `*.sh text eol=lf` so the hook scripts survive Windows checkouts.
 
+## Contributing
+
+Contributions welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md). The golden rule: **never commit
+personal or work content** (DailyLogs, project dashboards, identity, secrets) — this repo is the
+reusable system only. When you extend a command, sign your work in `commands/e4/CONTRIBUTORS.md`.
+
+## License
+
+Licensed under the **Apache License 2.0** — see [`LICENSE`](LICENSE). © 2026 Omar Araby.
+
 ---
 
 *`e4` · a persistent-memory system for Claude Code. Contributions welcome — add yourself to the namespace's `CONTRIBUTORS.md` when you extend the commands.*

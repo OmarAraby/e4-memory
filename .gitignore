@@ -1,13 +1,30 @@
+# =====================================================================
+# e4 — public repo. Keep ONLY the reusable system here.
+# Personal/work content stays local (untracked). When in doubt, leave it out.
+# =====================================================================
+
 # --- Personal identity (kept local; copy the *.example.md files to start) ---
 /User/profile.md
 /User/coding-standards.md
 
-# --- Personal/work content: dated daily logs + generated project dashboards ---
-# (keep only the folder READMEs so the structure stays documented in the public template)
-/DailyLogs/*.md
+# --- Personal/work content: keep only each folder's README in the public repo ---
+/DailyLogs/*
 !/DailyLogs/README.md
-/Projects/*.md
+/Projects/*
 !/Projects/README.md
+/Archive/**
+!/Archive/README.md
+
+# --- Secrets (defense in depth — these must never live in this repo) ---
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.pfx
+*.p12
+.credentials*
+secrets.*
 
 # --- Obsidian per-machine state (plugin config IS shared; workspace is not) ---
 .obsidian/workspace.json
