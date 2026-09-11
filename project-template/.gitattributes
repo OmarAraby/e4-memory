@@ -1,0 +1,13 @@
+# e4 memory tooling: hook scripts must stay LF so bash (Git Bash) runs them on Windows checkouts
+*.sh text eol=lf
+
+# e4 memory: decisions.md is the one remaining append-only file — every session/branch adds an ADR
+# at the same spot, so merging branches collides. 'union' makes git concatenate both sides instead
+# of raising a conflict.
+#
+# sessions/ deliberately needs NO union merge: one file per session means two branches never write
+# the same file. active-tasks.md is gitignored (generated from tasks/*.md).
+.ai-memory/decisions.md   merge=union
+
+# Legacy: only for repos created before the per-session redesign, which still have this file.
+.ai-memory/session-log.md merge=union
