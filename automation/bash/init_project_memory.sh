@@ -28,7 +28,8 @@ write() {
   echo "write $path"
 }
 
-mkdir -p "$MEM/tasks"
+# Tier-2: session history is one file per session under sessions/ (never a single shared file).
+mkdir -p "$MEM/tasks" "$MEM/sessions"
 echo "Initializing memory for '$PROJECT_NAME' at $MEM"
 echo
 
@@ -47,7 +48,7 @@ updated: $TODAY
 > One paragraph elevator pitch.
 
 ## How to read the memory (in order)
-1. onboarding → 2. context → 3. architecture → 4. active-tasks → 5. progress → 6. decisions → 7. session-log (latest)
+1. onboarding → 2. context → 3. architecture → 4. active-tasks → 5. progress → 6. decisions → 7. sessions/ (newest file)
 
 ## Golden Rules
 - 
@@ -147,6 +148,9 @@ updated: $TODAY
 
 # Active Tasks
 
+> ⚙️ GENERATED from \`tasks/*.md\` by \`generate_status.py\` — **do not edit by hand.**
+> Change a task's \`status:\` in its \`tasks/\` file, then regenerate.
+
 ## 🎯 Current Task
 > None yet.
 
@@ -158,19 +162,16 @@ updated: $TODAY
 ## 👀 In Review
 EOF
 
-write "$MEM/session-log.md" <<EOF
+# Tier-2 seed session. The 000000 timestamp sorts before any real session, so the newest file
+# is always the most recent work. One file per session — never a shared session-log.md.
+write "$MEM/sessions/$TODAY-000000-init.md" <<EOF
 ---
-tags: [project, session-log, memory]
-type: session-log
-updated: $TODAY
+type: session
+date: $TODAY
+branch: init
 ---
-
-# Session Log
-
-> Append-only, newest on top. Crash-recovery backbone.
-
 ## Session — $TODAY
-**TL;DR**: Initialized project memory.
+**TL;DR**: Initialized project memory. Session history lives in sessions/, one file per session.
 **Did**: Created .ai-memory structure.
 **Decisions**: None.
 **Next actions**:
@@ -184,6 +185,19 @@ uncommitted_changes: yes
 \`\`\`
 EOF
 
+write "$MEM/sessions/README.md" <<EOF
+---
+tags: [project, session, memory, index]
+---
+
+# sessions/ — one file per session
+
+Filename: \`YYYY-MM-DD-HHMMSS-<branch>.md\` — timestamp-first, so the lexically-last file is the
+newest session. Written by \`/e4:end-session\`; the SessionEnd hook drops an \`*-auto.md\`
+breadcrumb if that command was skipped. **Never edit an existing session file** — write a new one.
+Every entry needs a **TL;DR**: it is the anchor the next session resumes from.
+EOF
+
 write "$MEM/README.md" <<EOF
 ---
 tags: [project, memory, index]
@@ -191,7 +205,10 @@ tags: [project, memory, index]
 
 # .ai-memory — Project Memory
 
-Read order: onboarding → context → architecture → active-tasks → progress → decisions → session-log
+Read order: onboarding → context → architecture → active-tasks → progress → decisions → sessions/ (newest)
+
+Session history is **one file per session** under \`sessions/\`, and \`active-tasks.md\` is a
+generated view of \`tasks/*.md\`. Both exist so parallel branches never conflict on memory.
 Commit this directory to git (no secrets).
 EOF
 

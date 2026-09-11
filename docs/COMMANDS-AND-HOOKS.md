@@ -1,6 +1,6 @@
 # Implementing Custom Commands & Hooks
 
-How to wire `/init-memory`, `/end-session`, and automatic session hooks into Claude Code. Verified against the current Claude Code docs (slash commands + hooks reference).
+How to wire `/e4:init`, `/e4:end-session`, and automatic session hooks into Claude Code. Verified against the current Claude Code docs (slash commands + hooks reference).
 
 ---
 
@@ -10,24 +10,24 @@ Your goal — *"instead of relying on Claude to remember, it just does it"* — 
 
 | | **Slash command** (`.claude/commands/*.md`) | **Hook** (`settings.json`) |
 |---|---|---|
-| Trigger | You **type** `/end-session` | Fires **automatically** on a lifecycle event |
+| Trigger | You **type** `/e4:end-session` | Fires **automatically** on a lifecycle event |
 | What runs | Instructions sent to **Claude** (the model acts) | A **script** you provide |
 | Can write an intelligent summary? | ✅ Yes — Claude has the session context | ❌ No — it's just a script; at SessionEnd the model is already done |
 | Best for | Producing **content** (the summary, the updates) | **Mechanical** guarantees + auto-loading context |
 
 **The honest limitation:** a `SessionEnd` hook *cannot* make Claude write a session summary, because the session is ending and the model won't generate anything more. So:
 
-- **Content that needs intelligence** → a command (`/end-session`). The model writes the summary.
+- **Content that needs intelligence** → a command (`/e4:end-session`). The model writes the summary.
 - **Guarantees that don't need intelligence** → hooks. Auto-load memory at start; drop a breadcrumb if you forgot to log; archive done tasks; refresh the daily roll-up.
-- **The "remembering" itself** → the **SessionStart hook** (auto-injects memory every session, zero reliance on the model) plus an optional **Stop hook** (nudges Claude to run `/end-session` when work happened but wasn't logged).
+- **The "remembering" itself** → the **SessionStart hook** (auto-injects memory every session, zero reliance on the model) plus an optional **Stop hook** (nudges Claude to run `/e4:end-session` when work happened but wasn't logged).
 
-This combination is why you stop depending on Claude's discretion: memory is loaded mechanically, and the one human step left (`/end-session`) is both reminded automatically *and* backstopped by a breadcrumb if skipped.
+This combination is why you stop depending on Claude's discretion: memory is loaded mechanically, and the one human step left (`/e4:end-session`) is both reminded automatically *and* backstopped by a breadcrumb if skipped.
 
 ---
 
 ## How custom slash commands work
 
-A command is just a markdown file. **The filename becomes the command name** — `init-memory.md` → `/init-memory`. The file's body becomes a prompt sent to Claude when you invoke it.
+A command is just a markdown file. **The filename becomes the command name**, and a subdirectory becomes a namespace — `commands/e4/init.md` → `/e4:init`. (e4 namespaces its commands so they can't collide with Claude Code's own `/resume`.) The file's body becomes a prompt sent to Claude when you invoke it.
 
 **Locations:**
 - `.claude/commands/` — project-scoped, commit to git, shared with the team.
@@ -44,7 +44,7 @@ A command is just a markdown file. **The filename becomes the command name** —
 - `$ARGUMENTS` — everything you type after the command.
 - `$1`, `$2`, … — positional arguments.
 - `@path/to/file` — injects that file's contents.
-- `` !`some command` `` — runs the shell command at invocation time and embeds its output (the command must be permitted by `allowed-tools`). This is how `/end-session` pulls live `git status`/`git diff` before writing.
+- `` !`some command` `` — runs the shell command at invocation time and embeds its output (the command must be permitted by `allowed-tools`). This is how `/e4:end-session` pulls live `git status`/`git diff` before writing.
 
 > Note: older guides show a `/project:command` prefix. Current Claude Code uses the bare `/command` form (filename → name). Subdirectories namespace commands (e.g. `commands/mem/save.md` → `/mem:save`).
 
@@ -105,13 +105,13 @@ export AI_MEMORY_PYDIR="$HOME/AI-Vault/automation/python"
 export AI_PROJECTS_ROOT="$HOME/code"
 
 # 4. (Optional) make the commands available in ALL projects instead of one:
-cp ai-memory-system/claude-config/.claude/commands/*.md  ~/.claude/commands/
+cp -r ai-memory-system/claude-config/.claude/commands/e4  ~/.claude/commands/e4
 
 # 5. Open the project in Claude Code.
 #    - SessionStart hook auto-injects memory (you'll see it summarize on open).
-#    - Type /init-memory once if .ai-memory/ doesn't exist yet.
+#    - Type /e4:init once if .ai-memory/ doesn't exist yet.
 #    - Work normally.
-#    - Type /end-session to save (or get nudged by the Stop hook).
+#    - Type /e4:end-session to save (or get nudged by the Stop hook).
 ```
 
 **Windows:** either install Git Bash and keep the `bash .claude/hooks/*.sh` commands, or translate the hooks to PowerShell and change the `command` fields to `powershell -File .claude/hooks/SessionStart.ps1`. The slash commands themselves are OS-independent (they're markdown).
@@ -120,19 +120,19 @@ cp ai-memory-system/claude-config/.claude/commands/*.md  ~/.claude/commands/
 
 ## What each piece does in practice
 
-**`/init-memory [name]`** — checks for existing `.ai-memory/` (won't clobber), runs the bundled initializer if present or scaffolds the files itself, installs `CLAUDE.md`, and prints next steps. One command, full setup.
+**`/e4:init [name]`** — checks for existing `.ai-memory/` (won't clobber), runs the bundled initializer if present or scaffolds the files itself, installs `CLAUDE.md`, and prints next steps. One command, full setup.
 
-**`/end-session [note]`** — the workhorse. It runs `git status`/`git diff`/`git log` for ground truth, then **prepends** a structured entry to `session-log.md` (TL;DR, Did, Decisions, Files changed, State, Blockers, Next actions, Checkpoint), updates `progress.md` (completion %, Health, Completed/In-Progress/Next), updates `active-tasks.md` (current task status + checkpoint, promotes next task), adds an ADR to `decisions.md` if a real decision was made, and prints a summary. This is the "creates a Session Summary" deliverable — and because it's a command, the model fills it with real content instead of a template.
+**`/e4:end-session [note]`** — the workhorse. It runs `git status`/`git diff`/`git log` for ground truth, then writes a **new file** to `.ai-memory/sessions/` named `YYYY-MM-DD-HHMMSS-<branch>.md` (TL;DR, Did, Decisions, Files changed, State, Blockers, Next actions, Checkpoint), updates `progress.md` (phase, health, milestones), sets the `status:` in the relevant `tasks/<id>.md` and regenerates `active-tasks.md`, adds an ADR to `decisions.md` if a real decision was made, and prints a summary. This is the "creates a Session Summary" deliverable — and because it's a command, the model fills it with real content instead of a template.
 
-**`/resume`** (bonus) — explicitly re-reads memory in order and posts a Resume Summary. Usually unnecessary because the SessionStart hook already injects this, but handy after a long tangent or a `/clear`.
+**`/e4:resume`** (bonus) — explicitly re-reads memory in order and posts a Resume Summary. Usually unnecessary because the SessionStart hook already injects this, but handy after a long tangent or a `/clear`.
 
-**`/new-task <title>`** (bonus) — allocates the next `TASK-NNN`, writes the task file, registers it in `active-tasks.md`.
+**`/e4:new-task <title>`** (bonus) — allocates a timestamp-based ID (`TASK-<YYYYMMDD-HHMMSS>-<slug>`, never a sequential counter, so parallel branches can't collide), writes the task file, and regenerates `active-tasks.md`.
 
-**`session_start.sh`** (hook) — every session, prints current status, current task, and the latest session-log entry into Claude's context. If the last entry looks like an auto-breadcrumb (no TL;DR), it tells Claude the previous session wasn't saved and to reconstruct it from git — a self-healing loop.
+**`session_start.sh`** (hook) — every session, regenerates `active-tasks.md` from `tasks/*.md`, then prints current status, current task, and the newest `sessions/` file into Claude's context. If the last entry looks like an auto-breadcrumb (no TL;DR), it tells Claude the previous session wasn't saved and to reconstruct it from git — a self-healing loop.
 
-**`session_end.sh`** (hook) — if you forgot `/end-session`, appends a dated breadcrumb so the session is never *completely* unrecorded, then (backgrounded) archives completed tasks and regenerates the daily summary.
+**`session_end.sh`** (hook) — if you forgot `/e4:end-session`, writes a dated breadcrumb file to `sessions/` so the session is never *completely* unrecorded, then (backgrounded) archives completed tasks and regenerates the daily summary.
 
-**`stop_reminder.sh`** (hook, optional) — once per session, if there are uncommitted changes and no session-log entry for today, injects a one-line nudge to run `/end-session`. Soft by default; a commented block shows how to make it hard-block instead (subject to the Stop-hook block cap that prevents loops).
+**`stop_reminder.sh`** (hook, optional) — once per session, if there are uncommitted changes and no session file logged today, injects a one-line nudge to run `/e4:end-session`. Soft by default; a commented block shows how to make it hard-block instead (subject to the Stop-hook block cap that prevents loops).
 
 ---
 
@@ -140,7 +140,7 @@ cp ai-memory-system/claude-config/.claude/commands/*.md  ~/.claude/commands/
 
 1. **Open project** → SessionStart hook loads memory; Claude greets you with where you left off.
 2. **Work** → normal coding. (PostToolUse formatting/lint hooks can be added if you like.)
-3. **Wrap up** → type `/end-session`. If you forget and just close, the Stop hook reminds you mid-session, and the SessionEnd hook leaves a breadcrumb as last resort.
+3. **Wrap up** → type `/e4:end-session`. If you forget and just close, the Stop hook reminds you mid-session, and the SessionEnd hook leaves a breadcrumb as last resort.
 4. **Next session** → instant resume, because step 2/3 of the previous one populated memory.
 
-The result: the *mechanical* parts never depend on Claude remembering (hooks handle them), and the *intelligent* part (`/end-session`) is reminded and backstopped — so in practice it always gets done.
+The result: the *mechanical* parts never depend on Claude remembering (hooks handle them), and the *intelligent* part (`/e4:end-session`) is reminded and backstopped — so in practice it always gets done.

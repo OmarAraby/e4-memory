@@ -17,7 +17,12 @@
       "Bash(cp -r /tmp/v1/ex/ai-memory-system/docs 'D:\\\\AI-Vault/')",
       "Bash(cp -r /tmp/v1/ex/ai-memory-system/project-template 'D:\\\\AI-Vault/')",
       "Bash(cp -r /tmp/v1/ex/ai-memory-system/claude-config 'D:\\\\AI-Vault/')",
-      "Bash(command -v python3)"
+      "Bash(command -v python3)",
+      "Bash(find /d/Apexyard/apexyard/.claude -maxdepth 2 -not -path */.git/*)",
+      "Bash(command -v jq)",
+      "Bash(jq --version)",
+      "Bash(command -v gh)",
+      "Bash(gh --version)"
     ]
   }
 }

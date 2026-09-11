@@ -59,7 +59,7 @@ updated: {TODAY}
 - [[{name}/.ai-memory/progress|Progress]]
 - [[{name}/.ai-memory/decisions|Decisions]]
 - [[{name}/.ai-memory/active-tasks|Active Tasks]]
-- [[{name}/.ai-memory/session-log|Session Log]]
+- [[{name}/.ai-memory/sessions/README|Session History]]
 
 ## Open Tasks (Dataview)
 ```dataview

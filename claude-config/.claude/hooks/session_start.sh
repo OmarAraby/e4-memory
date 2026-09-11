@@ -19,10 +19,15 @@ if [ ! -d "$MEM" ]; then
   exit 0
 fi
 
+# Tier-3: active-tasks.md is a GENERATED view of tasks/* (gitignored). Refresh it from the task
+# files before reading (best-effort, fast). No-op if the generator isn't installed.
+PYDIR="${AI_MEMORY_PYDIR:-$HOME/AI-Vault/automation/python}"
+[ -f "$PYDIR/generate_status.py" ] && python3 "$PYDIR/generate_status.py" --project "$PWD" >/dev/null 2>&1
+
 echo "## 🧠 Project Memory (auto-loaded) — e4"
 echo "*forged by Omar Araby & contributors*"
 echo
-echo "Read order if you need detail: onboarding → context → architecture → active-tasks → progress → decisions → session-log."
+echo "Read order if you need detail: onboarding → context → architecture → active-tasks → progress → decisions → sessions/ (newest file)."
 echo
 
 # --- Current state from progress.md ---
@@ -42,14 +47,31 @@ if [ -f "$MEM/active-tasks.md" ]; then
   echo
 fi
 
-# --- Most recent session-log entry (the resume anchor) ---
-if [ -f "$MEM/session-log.md" ]; then
+# --- Most recent session (the resume anchor) ---
+# Tier-2: sessions live as one file per session in sessions/ (timestamp-prefixed names
+# sort chronologically, so the newest is the lexically-last). Falls back to the legacy
+# single session-log.md for repos not yet migrated.
+LATEST=""
+if [ -d "$MEM/sessions" ]; then
+  # Match ONLY the session naming contract (YYYY-...-*.md). A bare *.md glob would also pick up
+  # sessions/README.md, which sorts AFTER any date-prefixed name in LC_ALL=C and would be
+  # mistaken for the newest session.
+  LATEST="$(ls -1 "$MEM/sessions"/[0-9][0-9][0-9][0-9]-*.md 2>/dev/null | LC_ALL=C sort | tail -1)"
+fi
+if [ -n "$LATEST" ] && [ -f "$LATEST" ]; then
   echo "### Last session"
-  # grab from the first '## Session' line to just before the next one
+  echo "_$(basename "$LATEST")_"
+  head -40 "$LATEST"
+  echo
+  if ! grep -qi "TL;DR" "$LATEST"; then
+    echo "> ⚠️ The latest session file looks incomplete (no TL;DR). The previous session may have ended without /e4:end-session. Reconstruct what happened from git log and write a proper session file."
+    echo
+  fi
+elif [ -f "$MEM/session-log.md" ]; then
+  # Legacy single-file fallback (pre-Tier-2 repos)
+  echo "### Last session"
   awk '/^## Session/{c++} c==1{print} c==2{exit}' "$MEM/session-log.md" | head -30
   echo
-
-  # Self-healing: detect a stale/skeleton last entry (no TL;DR) -> tell Claude to reconstruct.
   LAST_BLOCK="$(awk '/^## Session/{c++} c==1{print} c==2{exit}' "$MEM/session-log.md")"
   if ! echo "$LAST_BLOCK" | grep -qi "TL;DR"; then
     echo "> ⚠️ The last session-log entry looks incomplete (no TL;DR). The previous session may have ended without /e4:end-session. Reconstruct what happened from git log and offer to write a proper entry."

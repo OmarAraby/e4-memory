@@ -20,16 +20,19 @@ You are working as a senior engineer on this project. You have **persistent memo
 3. Read `.ai-memory/architecture.md` — system structure and design principles.
 4. Read `.ai-memory/active-tasks.md` — what to work on now and the current checkpoint.
 5. Read `.ai-memory/progress.md` — overall state.
-6. Skim the **top entry** of `.ai-memory/session-log.md` — what happened last and the "Next actions".
+6. Skim the **newest file** in `.ai-memory/sessions/` — names are timestamp-prefixed, so the
+   lexically-last file is the newest. Read its TL;DR and "Next actions". If it has no TL;DR it's
+   an auto-breadcrumb (last session ended without `/e4:end-session`) — reconstruct from `git log`.
+   *Legacy*: if `sessions/` doesn't exist, read the top entry of `.ai-memory/session-log.md`.
 7. Reference `.ai-memory/decisions.md` only as needed (always before architectural changes).
 
 Then post a brief **Resume Summary** (≤8 lines):
 ```
 📋 Resumed: <project name>
 Phase: <phase> | Health: <🟢/🟡/🔴>
-Current task: TASK-NNN — <title> (<status>)
+Current task: <TASK-ID> — <title> (<status>)
 Last session ended: <date> — <one-line TL;DR>
-Picking up at: <next concrete step from session-log>
+Picking up at: <next concrete step from the newest session file>
 Blockers: <none / list>
 ```
 
@@ -65,13 +68,13 @@ After completing a task, a meaningful chunk of work, or before ending the sessio
 | When | Update |
 |------|--------|
 | Always (after work) | `progress.md` — move items between Completed/In-Progress/Next; bump "Last updated"; update completion % and Health. |
-| Always (after work) | `active-tasks.md` — update current task status, checkpoint, and next step. Promote next task if current is done. |
+| Always (after work) | `tasks/<id>.md` — update the `status:` field, checkpoints, and notes. **Never edit `active-tasks.md`** — it is a generated, gitignored view, regenerated from `tasks/*.md`. |
 | Made a lasting decision | `decisions.md` — add a new ADR entry (Context / Decision / Alternatives / Consequences). |
 | Architecture changed | `architecture.md` — reflect the new reality. |
 | Scope/goals changed | `context.md`. |
-| End of session / checkpoint | `session-log.md` — **prepend** a new entry (template at bottom of that file). |
+| End of session / checkpoint | `sessions/` — write a **new file** `YYYY-MM-DD-HHMMSS-<branch>.md`. Never edit an existing session file. |
 
-**Definition of "significant work"**: any change that alters behavior, structure, dependencies, or task status. Typo fixes and trivial edits don't require a full memory update, but still belong in the session-log if notable.
+**Definition of "significant work"**: any change that alters behavior, structure, dependencies, or task status. Typo fixes and trivial edits don't require a full memory update, but still belong in the session file if notable.
 
 Update memory by **editing the markdown files directly** (str_replace/append). Keep entries concise and factual.
 
@@ -79,8 +82,11 @@ Update memory by **editing the markdown files directly** (str_replace/append). K
 
 ## 5. Task Tracking Rules
 
-- One detailed file per task in `.ai-memory/tasks/TASK-NNN.md` (use the new-task template).
-- `active-tasks.md` holds only current + next + blocked + in-review (keep it lean).
+- One detailed file per task in `.ai-memory/tasks/TASK-<YYYYMMDD-HHMMSS>-<slug>.md` — create it with
+  `/e4:new-task`. IDs are timestamp-based, never sequential: two branches allocating `TASK-002` at
+  the same time would collide on merge.
+- The task file's `status:` front-matter (`todo` / `in-progress` / `blocked` / `in-review` / `done`)
+  is the **source of truth**. `active-tasks.md` is a generated view of it — never hand-edit it.
 - Update the task file's **Checkpoints** as you progress so any session can resume mid-task.
 - When a task is done: check all acceptance criteria, mark it complete in `progress.md`, remove from `active-tasks.md` current slot, and (optionally) let the archive script move the task file to `~/AI-Vault/Archive/tasks/`.
 
@@ -88,7 +94,9 @@ Update memory by **editing the markdown files directly** (str_replace/append). K
 
 ## 6. Session Summary Rules (SESSION END)
 
-Before the session ends (or when the user says "wrap up" / "checkpoint"), **prepend** an entry to `session-log.md` containing:
+Before the session ends (or when the user says "wrap up" / "checkpoint"), write a **new file** to
+`.ai-memory/sessions/` named `YYYY-MM-DD-HHMMSS-<branch>.md` (one file per session — never append to
+a shared file, which is what used to cause cross-branch merge conflicts) containing:
 - **TL;DR** (2–3 sentences)
 - **Did** (bullets)
 - **Decisions** (or "None new")
@@ -98,7 +106,7 @@ Before the session ends (or when the user says "wrap up" / "checkpoint"), **prep
 - **Next actions** (numbered, concrete — the first thing the next session should do)
 - **Checkpoint block** (last_command, working_file, test_status, uncommitted_changes)
 
-This is the most important habit: a good session-log entry is what makes the *next* session instant.
+This is the most important habit: a good session file is what makes the *next* session instant.
 
 ---
 
@@ -116,7 +124,8 @@ This is the most important habit: a good session-log entry is what makes the *ne
 
 If memory is missing or you need housekeeping, use the scripts in `~/AI-Vault/automation/` (or the project's `scripts/`):
 - `init_project_memory` — scaffold `.ai-memory/` for a new project.
-- `generate_daily_summary` — roll up today's session-logs into the global daily log.
+- `generate_daily_summary` — roll up today's session files into the global daily log.
+- `generate_status` — regenerate `active-tasks.md` from `tasks/*.md` (also run by the SessionStart hook).
 - `archive_completed_tasks` — move done tasks to the archive.
 - `create_dashboard` — (re)generate the Obsidian project dashboard.
 - `sync_obsidian` — refresh the global vault's project index links.
@@ -141,7 +150,7 @@ Never run destructive commands without confirming. Never `git push` or force-pus
 | "resume" / first message / `/e4:resume` | Run Section 1 onboarding + Resume Summary |
 | "checkpoint" / "wrap up" / `/e4:end-session` | Run Section 6 session summary |
 | `/e4:init` | Scaffold `.ai-memory/` + this file (Section 8) |
-| `/e4:new-task <title>` | Create `tasks/TASK-NNN.md`, add to `active-tasks.md` |
+| `/e4:new-task <title>` | Create `tasks/TASK-<timestamp>-<slug>.md`; `active-tasks.md` regenerates |
 | "what's next?" | Read `active-tasks.md` → state current + next step |
 | "why did we…?" | Search `decisions.md` |
 | "status" | Summarize `progress.md` |

@@ -3,7 +3,7 @@
 # Fires when Claude finishes a response (once per turn).
 #
 # Purpose: nudge toward saving memory when meaningful work happened but the
-# session-log hasn't been updated today. This is what makes Claude "remember"
+# no session file has been written today. This is what makes Claude "remember"
 # to log — without you having to rely on it.
 #
 # Behavior is intentionally SOFT: it injects a reminder via additionalContext at
@@ -28,10 +28,22 @@ MARKER="${TMPDIR:-/tmp}/.claude_stop_${_KEY}_${TODAY}"
 CHANGES="$(git status --short 2>/dev/null | wc -l | tr -d ' ')"
 [ "${CHANGES:-0}" -eq 0 ] && exit 0
 
-# Has the session-log already been updated today?
+# Has this session already been logged today?
+# Tier-2: sessions are one file per session in sessions/. A REAL entry for today = a file named
+# with today's date that contains a TL;DR (auto-breadcrumbs from session_end.sh carry a TL;DR
+# marked with a warning, but they are only written AFTER the session ends, so they can't race us).
+# This is the same test session_end.sh uses — keep the two in sync.
+if [ -d "$MEM/sessions" ]; then
+  for f in "$MEM/sessions/$TODAY"*.md; do
+    [ -f "$f" ] || continue
+    grep -qi "TL;DR" "$f" && exit 0   # already logged today
+  done
+fi
+# Legacy fallback (pre-Tier-2 repos): a same-day TL;DR entry in the old single session-log.md counts.
 LOG="$MEM/session-log.md"
-if [ -f "$LOG" ] && head -40 "$LOG" | grep -q "$TODAY"; then
-  exit 0   # already logged today
+if [ -f "$LOG" ]; then
+  LAST_BLOCK="$(awk '/^## Session/{c++} c==1{print} c==2{exit}' "$LOG")"
+  echo "$LAST_BLOCK" | grep -q "$TODAY" && echo "$LAST_BLOCK" | grep -qi "TL;DR" && exit 0
 fi
 
 # Emit a one-time, non-blocking reminder as additional context.
@@ -40,7 +52,7 @@ cat <<'JSON'
 {
   "hookSpecificOutput": {
     "hookEventName": "Stop",
-    "additionalContext": "Reminder: there are uncommitted changes and no session-log entry for today yet. If this is a good stopping point, run /e4:end-session to update progress.md, active-tasks.md, and session-log.md so the next session can resume cleanly."
+    "additionalContext": "Reminder: there are uncommitted changes and no session file logged for today yet. If this is a good stopping point, run /e4:end-session to write a session file to .ai-memory/sessions/ and update progress.md and the relevant tasks/ file so the next session can resume cleanly."
   }
 }
 JSON

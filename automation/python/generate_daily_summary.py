@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-generate_daily_summary.py — Roll up today's session-log entries from all projects
+generate_daily_summary.py — Roll up today's session entries from all projects
 into a single daily note in the global vault.
 
-Scans VAULT/Projects index notes (or a configured projects root) for each project's
-.ai-memory/session-log.md, extracts entries dated today, and writes/updates
-VAULT/DailyLogs/YYYY-MM-DD.md.
+Tier-2 aware: each project keeps one file per session in .ai-memory/sessions/
+(filenames are date-prefixed, e.g. 2026-06-18-164530-main.md). This scans each
+project's sessions/ for files whose name starts with the target date. For projects
+not yet migrated, it falls back to parsing the legacy single .ai-memory/session-log.md.
 
 Usage:
     python generate_daily_summary.py --vault ~/AI-Vault --projects-root ~/code
@@ -18,35 +19,35 @@ import re
 from pathlib import Path
 
 
-def find_session_logs(projects_root: Path) -> list[Path]:
-    """Find all .ai-memory/session-log.md under projects_root (depth-limited)."""
-    logs: list[Path] = []
+def find_memdirs(projects_root: Path) -> list[Path]:
+    """Find all .ai-memory directories under projects_root (depth-limited)."""
+    dirs: list[Path] = []
     if not projects_root.exists():
-        return logs
-    for memdir in projects_root.glob("*/.ai-memory"):
-        log = memdir / "session-log.md"
-        if log.exists():
-            logs.append(log)
-    # also one level deeper (e.g. ~/code/org/repo)
-    for memdir in projects_root.glob("*/*/.ai-memory"):
-        log = memdir / "session-log.md"
-        if log.exists():
-            logs.append(log)
-    return logs
+        return dirs
+    for memdir in list(projects_root.glob("*/.ai-memory")) + list(projects_root.glob("*/*/.ai-memory")):
+        if memdir.is_dir():
+            dirs.append(memdir)
+    return dirs
 
 
-def extract_entries_for_date(log: Path, date_str: str) -> list[str]:
-    """Return session entries whose header contains the date."""
-    text = log.read_text(encoding="utf-8", errors="ignore")
-    # Entries start with '## Session' headers
-    blocks = re.split(r"(?=^## Session)", text, flags=re.MULTILINE)
-    matched = [b.strip() for b in blocks if date_str in b and b.lstrip().startswith("## Session")]
-    return matched
+def entries_for_date(memdir: Path, date_str: str) -> list[str]:
+    """Session entries for the date. Prefer per-session files; fall back to session-log.md."""
+    sessions = memdir / "sessions"
+    if sessions.is_dir():
+        files = sorted(sessions.glob(f"{date_str}*.md"))
+        return [f.read_text(encoding="utf-8", errors="ignore").strip() for f in files]
+    # Legacy single-file fallback
+    log = memdir / "session-log.md"
+    if log.exists():
+        text = log.read_text(encoding="utf-8", errors="ignore")
+        blocks = re.split(r"(?=^## Session)", text, flags=re.MULTILINE)
+        return [b.strip() for b in blocks if date_str in b and b.lstrip().startswith("## Session")]
+    return []
 
 
-def project_name(log: Path) -> str:
-    # .../<project>/.ai-memory/session-log.md
-    return log.parent.parent.name
+def project_name(memdir: Path) -> str:
+    # .../<project>/.ai-memory
+    return memdir.parent.name
 
 
 def build_daily_note(date_str: str, sections: dict[str, list[str]]) -> str:
@@ -59,7 +60,6 @@ def build_daily_note(date_str: str, sections: dict[str, list[str]]) -> str:
     for proj, entries in sorted(sections.items()):
         out.append(f"\n## [[{proj}]] — {len(entries)} session(s)\n")
         for e in entries:
-            # indent the entry as a quote for readability
             out.append("\n" + e + "\n")
     out.append(f"\n---\n- Previous: [[{(dt.date.fromisoformat(date_str) - dt.timedelta(days=1)).isoformat()}]]")
     out.append(f"\n- Next: [[{(dt.date.fromisoformat(date_str) + dt.timedelta(days=1)).isoformat()}]]\n")
@@ -77,12 +77,11 @@ def main() -> int:
     projects_root = Path(args.projects_root).expanduser().resolve() if args.projects_root \
         else vault.parent / "code"
 
-    logs = find_session_logs(projects_root)
     sections: dict[str, list[str]] = {}
-    for log in logs:
-        entries = extract_entries_for_date(log, args.date)
+    for memdir in find_memdirs(projects_root):
+        entries = entries_for_date(memdir, args.date)
         if entries:
-            sections[project_name(log)] = entries
+            sections[project_name(memdir)] = entries
 
     daily_dir = vault / "DailyLogs"
     daily_dir.mkdir(parents=True, exist_ok=True)

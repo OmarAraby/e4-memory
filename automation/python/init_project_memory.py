@@ -7,6 +7,9 @@ Usage:
     python init_project_memory.py .            # uses current dir, infers name
 
 Idempotent: won't overwrite existing files unless --force is passed.
+
+Tier-2: session history is one file per session under .ai-memory/sessions/
+(never a single shared file), so branches never conflict on memory.
 """
 from __future__ import annotations
 import argparse
@@ -31,10 +34,10 @@ updated: {today}
 > One paragraph elevator pitch.
 
 ## How to read the memory (in order)
-1. onboarding.md → 2. context.md → 3. architecture.md → 4. active-tasks.md → 5. progress.md → 6. decisions.md → 7. session-log.md (latest)
+1. onboarding.md → 2. context.md → 3. architecture.md → 4. active-tasks.md → 5. progress.md → 6. decisions.md → 7. sessions/ (newest file)
 
 ## Golden Rules for this project
-- 
+-
 
 ## Environment Setup
 ```bash
@@ -43,7 +46,7 @@ updated: {today}
 
 ## How to run tests
 ```bash
-# 
+#
 ```
 """,
     "context.md": """---
@@ -99,9 +102,9 @@ updated: {today}
 ---
 <!-- ADR template
 ## ADR-NNN: Title
-**Status**:  **Date**: 
-**Context**:  **Decision**: 
-**Alternatives considered**:  **Consequences**:  **Links**: 
+**Status**:  **Date**:
+**Context**:  **Decision**:
+**Alternatives considered**:  **Consequences**:  **Links**:
 -->
 """,
     "progress.md": """---
@@ -149,34 +152,6 @@ updated: {today}
 ## 👀 In Review
 ## Recently Completed (last 5)
 """,
-    "session-log.md": """---
-tags: [project, session-log, memory]
-type: session-log
-updated: {today}
----
-
-# Session Log
-
-> Append-only, newest on top. Crash-recovery backbone.
-
-## Session — {today}
-**TL;DR**: Initialized project memory.
-**Did**: Created .ai-memory structure.
-**Decisions**: None.
-**Files changed**: .ai-memory/*
-**State**: Scaffolding complete.
-**Blockers**: None.
-**Next actions**:
-1. Fill in context.md
-2. Define architecture.md
-**Checkpoint**:
-```
-last_command: init_project_memory
-working_file: 
-test_status: not run
-uncommitted_changes: yes
-```
-""",
     "README.md": """---
 tags: [project, memory, index]
 ---
@@ -184,18 +159,44 @@ tags: [project, memory, index]
 # .ai-memory — Project Memory
 
 Persistent brain for this project. Read order:
-onboarding → context → architecture → active-tasks → progress → decisions → session-log
+onboarding → context → architecture → active-tasks → progress → decisions → sessions/ (newest)
 
-Commit this directory to git (no secrets).
+Session history is **one file per session** under `sessions/` (filenames are date-prefixed, so the
+newest sorts last). This avoids cross-branch merge conflicts — never re-introduce a single shared
+`session-log.md`. Commit this directory to git (no secrets).
 """,
 }
+
+# Tier-2: the seed session. The 000000 timestamp sorts before any real session,
+# so the "newest" file is always the latest real session.
+SEED_SESSION = """---
+type: session
+date: {today}
+---
+## Session — {today}
+**TL;DR**: Initialized project memory (e4).
+**Did**: Scaffolded .ai-memory/. Session history lives in sessions/ (one file per session).
+**Decisions**: None.
+**Files changed**: .ai-memory/*
+**State**: Scaffolding complete.
+**Blockers**: None.
+**Next actions**:
+1. Fill in context.md and architecture.md.
+**Checkpoint**:
+```
+last_command: init_project_memory
+working_file:
+test_status: not run
+uncommitted_changes: yes
+```
+"""
 
 CLAUDE_MD_POINTER = """# CLAUDE.md
 
 > See the full operating instructions. At session start, read `.ai-memory/` in this order:
-> onboarding → context → architecture → active-tasks → progress → decisions → session-log (latest),
+> onboarding → context → architecture → active-tasks → progress → decisions → sessions/ (newest),
 > then post a Resume Summary. After significant work, update progress.md, active-tasks.md,
-> decisions.md (if needed), and prepend a session-log.md entry.
+> decisions.md (if needed), and write a new file in `.ai-memory/sessions/` for the session.
 >
 > (Replace this stub with the full CLAUDE.md from the AI-Memory-System package for complete rules.)
 """
@@ -229,8 +230,14 @@ def main() -> int:
 
     for fname, tmpl in FILES.items():
         print(write(mem / fname, tmpl.format(today=TODAY), args.force))
+
     (mem / "tasks").mkdir(exist_ok=True)
     print(f"write {mem / 'tasks'}/")
+
+    # Tier-2: one file per session under sessions/
+    (mem / "sessions").mkdir(exist_ok=True)
+    seed = mem / "sessions" / f"{TODAY}-000000-init.md"
+    print(write(seed, SEED_SESSION.format(today=TODAY), args.force))
 
     if args.with_claude_md:
         print(write(root / "CLAUDE.md", CLAUDE_MD_POINTER, args.force))

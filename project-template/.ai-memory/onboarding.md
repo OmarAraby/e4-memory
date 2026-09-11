@@ -18,7 +18,8 @@ updated: 2026-01-01
 4. **`active-tasks.md`** — what to work on now
 5. **`progress.md`** — what's done and what's left
 6. **`decisions.md`** — *consult before changing architecture*
-7. **`session-log.md`** — recent session history (read the latest 1-2 entries)
+7. **`sessions/`** — session history, one file per session (read the newest 1-2 files;
+   timestamp-prefixed names sort chronologically, so the last one is the newest)
 
 ## Golden Rules for this project
 > Project-specific overrides. General rules live in `CLAUDE.md` at repo root.

@@ -29,9 +29,10 @@ Claude Code forgets everything when a session ends. This system makes the *mecha
 │  CLAUDE.md            operating contract Claude auto-reads    │
 │  .ai-memory/                                                  │
 │    onboarding.md  context.md  architecture.md                 │
-│    decisions.md (ADRs)  progress.md  active-tasks.md          │
-│    session-log.md (append-only, the resume anchor)            │
-│    tasks/TASK-NNN.md                                          │
+│    decisions.md (ADRs)  progress.md                           │
+│    active-tasks.md (generated view, gitignored)               │
+│    sessions/YYYY-MM-DD-HHMMSS-branch.md (the resume anchor)   │
+│    tasks/TASK-<timestamp>-<slug>.md                           │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -45,8 +46,8 @@ Installed per-project under `.claude/commands/e4/` (so the namespace — and the
 |---|---|
 | `/e4:init` | Scaffold `.ai-memory/` + a `CLAUDE.md` (won't clobber an existing one — it appends a memory section) |
 | `/e4:resume` | Re-read memory in order and post a Resume Summary |
-| `/e4:new-task <title>` | Create a tracked `tasks/TASK-NNN.md` and register it |
-| `/e4:end-session` | The workhorse — pull live `git` state, prepend a session-log entry, update progress/tasks/decisions |
+| `/e4:new-task <title>` | Create a tracked `tasks/TASK-<timestamp>-<slug>.md`; `active-tasks.md` regenerates from it |
+| `/e4:end-session` | The workhorse — pull live `git` state, write a new `sessions/` file, update progress/tasks/decisions |
 
 ## Hooks (the "doesn't rely on the model" guarantee)
 
@@ -113,7 +114,8 @@ Windows wrappers: `automation/powershell/Ai-Memory.ps1 {daily|dashboard|archive|
 ## Conventions
 
 - **Commit `.ai-memory/` to each repo's git.** Memory travels with the code. Never put secrets in it.
-- **The session-log is sacred** — append-only, newest first; a sharp TL;DR makes the next session instant.
+- **Session history is sacred** — one immutable file per session in `sessions/`, never edited; a sharp TL;DR makes the next session instant.
+- **Never hand-edit a generated view** — `active-tasks.md` comes from `tasks/*.md`, dashboards come from the repos. Edit the source, regenerate.
 - **One ADR per lasting decision** in `decisions.md`; supersede, never silently contradict.
 - Notes use `[[wikilinks]]` so the Obsidian graph stays connected.
 

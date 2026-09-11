@@ -38,7 +38,7 @@ If NOT found, create the structure yourself using the Write tool. Create `.ai-me
 - `decisions.md` — ADR log with an index table
 - `progress.md` — phase, completion %, milestones, Completed/In-Progress/Up-Next sections
 - `active-tasks.md` — Current Task, Next Up, Blocked, In Review
-- `session-log.md` — append-only header with one seed entry (TL;DR: initialized memory)
+- `sessions/` — one file per session (date-prefixed names, e.g. `2026-06-18-164530-main.md`); seed it with `<today>-000000-init.md` (TL;DR: initialized memory). Do NOT create a single `session-log.md` — per-session files avoid cross-branch merge conflicts.
 - `README.md` — the read order and "commit this dir to git"
 - `tasks/` — empty directory
 
@@ -62,6 +62,34 @@ If a source is found AND `./.claude/hooks/` does not already exist:
 
 If `./.claude/hooks/` already exists, skip (don't clobber). If no hook source is found, tell the user where the hooks live and continue without failing.
 
+## Step 2.6 — Ensure `.gitattributes` (prevent cross-branch memory conflicts)
+`decisions.md` is the one remaining **append-only** file — every session/branch adds an ADR at
+the same spot, so merging branches collides. Mark it `merge=union` so git concatenates both sides
+instead of raising a conflict. (`sessions/` needs no union merge: one file per session means two
+branches never touch the same file. The legacy `session-log.md` line is kept only for repos that
+still have that file.) Also pin hook scripts to LF so they run on Windows checkouts.
+
+Ensure `./.gitattributes` contains these lines — **create it if missing; if it already exists,
+append only the lines not already present** (don't duplicate or reorder existing entries):
+```
+*.sh text eol=lf
+.ai-memory/decisions.md   merge=union
+.ai-memory/session-log.md merge=union   # legacy pre-Tier-2 repos only
+```
+`merge=union` is a built-in git driver — no `.git/config` setup needed; the committed
+`.gitattributes` carries it to every clone. It covers only the append-only files; `progress.md`
+holds stable fields (rare conflicts) and `active-tasks.md` is gitignored (next step).
+
+## Step 2.7 — Ensure `.gitignore` excludes the generated view
+`active-tasks.md` is a **generated view** of `tasks/*.md` (rebuilt each session by `generate_status.py`),
+so it must NOT be committed — otherwise two branches regenerate different content and conflict.
+Ensure `./.gitignore` contains this line (create the file if missing; append only if not already present):
+```
+.ai-memory/active-tasks.md
+```
+If the repo already tracks `active-tasks.md` from before, untrack it once (keeps the file on disk):
+`git rm --cached .ai-memory/active-tasks.md`.
+
 ## Step 3 — Install CLAUDE.md
 If `CLAUDE.md` does not exist at the project root, create it from the bundled template (search the same locations for `CLAUDE.md`), or write the standard one with: session-start protocol, before-changes checks, memory-update rules, task-tracking rules, session-summary rules, coding rules.
 
@@ -73,7 +101,7 @@ Print a short confirmation:
 - the read order
 - remind the user to fill in `context.md` and `architecture.md`
 - note that the SessionStart auto-load hook takes effect on the **next** session (reopen the project)
-- suggest committing `.ai-memory/`, `.claude/`, and `CLAUDE.md` to git (with `.gitattributes` `*.sh text eol=lf` so hooks survive Windows checkouts)
+- suggest committing `.ai-memory/`, `.claude/`, `CLAUDE.md`, and `.gitattributes` to git (the `.gitattributes` pins `*.sh` to LF for Windows hooks and union-merges the append-only memory files to avoid cross-branch conflicts)
 
 Do not start coding work. This command only sets up memory.
 

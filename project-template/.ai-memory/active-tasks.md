@@ -1,47 +1,27 @@
 ---
-tags: [project, tasks, active, memory]
+tags: [project, tasks, active, memory, generated]
 type: active-tasks
-updated: 2026-01-01
+updated: 2026-09-11
 ---
 
 # Active Tasks
 
-> What Claude should work on **right now**. Detailed task files live in `tasks/`.
-> Keep this lean — only currently-active and immediately-next tasks.
+> ⚙️ GENERATED from `tasks/*.md` by `generate_status.py` — **do not edit by hand.**
+> Change a task's `status:` in its `tasks/` file. This file is gitignored and regenerated per session.
+
+**Tasks:** 0/1 done (0%)
 
 ## 🎯 Current Task
-**TASK-001** — {{title}}
-- **Status**: in-progress
-- **Goal**: 
-- **Detail**: [[tasks/TASK-001]]
-- **Checkpoint**: (where exactly did we leave off?)
-- **Next concrete step**: 
+- **TASK-20260101-090000-example-health-endpoint** — Example — implement health-check endpoint _(priority: high)_ → `tasks/TASK-20260101-090000-example-health-endpoint.md`
 
-## 🔜 Next Up (prioritized)
-| ID | Task | Priority | Detail |
-|----|------|----------|--------|
-| TASK-002 |  | high | [[tasks/TASK-002]] |
-| TASK-003 |  | medium | [[tasks/TASK-003]] |
+## 🔜 Next Up
+> Nothing queued.
 
 ## 🚧 Blocked
-| ID | Task | Blocked by | Since |
-|----|------|-----------|-------|
-|    |      |           |       |
+> None.
 
 ## 👀 In Review
-| ID | Task | Waiting on |
-|----|------|-----------|
-|    |      |           |
+> None.
 
-## Recently Completed (last 5)
-> Full history in `progress.md`. Completed task files move to global `Archive/tasks/`.
-- [x] TASK-000 — Initialize project memory (2026-01-01)
-
----
-### Dataview (if viewing in Obsidian)
-```dataview
-TASK
-FROM "tasks"
-WHERE !completed
-GROUP BY status
-```
+## ✅ Done (recent)
+> None yet.

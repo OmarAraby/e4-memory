@@ -44,4 +44,4 @@ updated: 2026-01-01
 
 ## See Also
 - [[project-name-active-tasks]]
-- [[project-name-session-log]]
+- [[project-name-sessions]]

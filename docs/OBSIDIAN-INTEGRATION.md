@@ -106,7 +106,7 @@ FROM #status/blocked
 1. Settings → Core plugins → enable **Daily notes**.
 2. Set "New file location" to `DailyLogs/`.
 3. Set "Template file location" to `Templates/daily-note.md`.
-4. Run `generate_daily_summary.py` (or the `daily` wrapper) on a schedule to pull each project's session-log entries into that day's note.
+4. Run `generate_daily_summary.py` (or the `daily` wrapper) on a schedule to pull each project's `sessions/` files for that date into that day's note.
 
 This gives you one place answering "what did I do across everything today?" with links back into each project.
 
