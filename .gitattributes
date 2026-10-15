@@ -1,0 +1,5 @@
+# Scripts run by bash / python on every OS. With core.autocrlf=true (the Git for Windows default)
+# they would be checked out with CRLF, which breaks bash ($'\r': command not found) and shebangs —
+# and the hooks are copied from this checkout into projects. Pin them to LF on every platform.
+*.sh text eol=lf
+claude-config/.claude/hooks/* text eol=lf
