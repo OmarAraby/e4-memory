@@ -16,15 +16,17 @@ section), `.gitattributes`, `.gitignore`<!-- adapter:detect-extra --><!-- /adapt
 - If ALL pieces already exist → report that the project is fully set up and stop.
 - Reinitialize memory from scratch ONLY if the user explicitly asks.
 
-Wherever this workflow says "the e4 vault", search these locations (first match wins):
-`$AI_VAULT/`, `~/AI-Vault/`, `./scripts/`.
+Resolve these two locations once, before Step 2 (quote them in commands — they may contain spaces):
+- **`<e4 vault>`** = <!-- adapter:vault -->`$AI_VAULT` if set, else `~/AI-Vault` (read it with `echo "$AI_VAULT"`; PowerShell: `$env:AI_VAULT`)<!-- /adapter:vault -->.
+  If that folder doesn't exist, use `./scripts/` instead.
+- **`<scripts dir>`** = <!-- adapter:scripts-dir -->`$AI_MEMORY_PYDIR` if set, else `<e4 vault>/automation/python` (read it with `echo "$AI_MEMORY_PYDIR"`; PowerShell: `$env:AI_MEMORY_PYDIR`)<!-- /adapter:scripts-dir -->.
 
 ## Step 2 — Scaffold the structure (only if `.ai-memory/` is missing)
 Prefer the bundled initializer if available; otherwise create files yourself.
 
 Look for the init script in these locations (first match wins):
 - `./scripts/init_project_memory.py`
-- `~/AI-Vault/automation/python/init_project_memory.py`
+- `<scripts dir>/init_project_memory.py`
 - `~/.claude/ai-memory/init_project_memory.py`
 
 If found, run it (try `python3`, fall back to `python` on Windows):

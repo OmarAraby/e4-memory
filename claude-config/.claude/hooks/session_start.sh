@@ -21,7 +21,7 @@ fi
 
 # Tier-3: active-tasks.md is a GENERATED view of tasks/* (gitignored). Refresh it from the task
 # files before reading (best-effort, fast). No-op if the generator isn't installed.
-PYDIR="${AI_MEMORY_PYDIR:-$HOME/AI-Vault/automation/python}"
+PYDIR="${AI_MEMORY_PYDIR:-${AI_VAULT:-$HOME/AI-Vault}/automation/python}"
 [ -f "$PYDIR/generate_status.py" ] && python3 "$PYDIR/generate_status.py" --project "$PWD" >/dev/null 2>&1
 
 echo "## 🧠 Project Memory (auto-loaded) — e4"

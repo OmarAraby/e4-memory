@@ -72,7 +72,7 @@ fi
 # --- Best-effort maintenance, backgrounded so we exit fast ---
 VAULT="${AI_VAULT:-$HOME/AI-Vault}"
 PROJECTS_ROOT="${AI_PROJECTS_ROOT:-$(dirname "$PWD")}"
-PYDIR="${AI_MEMORY_PYDIR:-$HOME/AI-Vault/automation/python}"
+PYDIR="${AI_MEMORY_PYDIR:-$VAULT/automation/python}"
 (
   if [ -f "$PYDIR/archive_completed_tasks.py" ]; then
     python3 "$PYDIR/archive_completed_tasks.py" --project "$PWD" --vault "$VAULT" --infer

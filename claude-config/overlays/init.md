@@ -18,8 +18,7 @@ nudges to run `/e4:end-session`. Install them **into this project only** — nev
 (a global hook would fire in every repo you open, including ones with no `.ai-memory/`).
 
 Find the hook source (first match wins):
-- `$AI_VAULT/claude-config/.claude/` (env var)
-- `~/AI-Vault/claude-config/.claude/`
+- `<e4 vault>/claude-config/.claude/`
 - `./scripts/.claude/`
 
 If a source is found AND `./.claude/hooks/` does not already exist:
@@ -36,8 +35,7 @@ Claude Code reads `AGENTS.md` on its own only when the project has **no** `CLAUD
 shared contract is pulled in with an `@AGENTS.md` import.
 
 If `CLAUDE.md` does not exist at the project root, create it from the bundled template
-(`project-template/CLAUDE.md` in the same locations as the hook source, one level up from
-`claude-config/`) — a thin file that imports `@AGENTS.md` and adds the Claude Code specifics.
+`<e4 vault>/project-template/CLAUDE.md` — a thin file that imports `@AGENTS.md` and adds the Claude Code specifics.
 If no template is found, write a `CLAUDE.md` whose first content line is `@AGENTS.md`.
 
 Wherever this step writes the `@AGENTS.md` line, also add (once) the sentence: "If the `AGENTS.md`
@@ -63,3 +61,9 @@ GitHub Copilot and Cursor need nothing more: both read `AGENTS.md` and `.agents/
 <!-- region:commit-extra -->
 , `.claude/`, `CLAUDE.md`
 <!-- /region:commit-extra -->
+<!-- region:scripts-dir -->
+!`python3 -c "import os; print(os.environ.get('AI_MEMORY_PYDIR') or os.path.join(os.environ.get('AI_VAULT') or os.path.expanduser('~/AI-Vault'), 'automation', 'python'))"`
+<!-- /region:scripts-dir -->
+<!-- region:vault -->
+!`python3 -c "import os; print(os.environ.get('AI_VAULT') or os.path.expanduser('~/AI-Vault'))"`
+<!-- /region:vault -->

@@ -9,8 +9,9 @@ allowed-tools: Read, Bash(ls:*), Bash(git status:*), Bash(git log:*), Bash(pytho
 
 ## Step 0 — Refresh the generated view
 `active-tasks.md` is a **generated, gitignored view** of `tasks/*.md`. Refresh it before reading so
-you never resume off a stale board: run `python3 <path>/generate_status.py --project .`
-(search `~/AI-Vault/automation/python/`, then `./scripts/`; on Windows try `python` if `python3` is missing). If the generator isn't found, skip it
+you never resume off a stale board: run `python3 "<scripts dir>/generate_status.py" --project .`
+where `<scripts dir>` is !`python3 -c "import os; print(os.environ.get('AI_MEMORY_PYDIR') or os.path.join(os.environ.get('AI_VAULT') or os.path.expanduser('~/AI-Vault'), 'automation', 'python'))"`; if the script isn't there, try `./scripts/`.
+Quote the path (it may contain spaces); on Windows try `python` if `python3` is missing. If the generator isn't found, skip it
 and read the existing file — the SessionStart hook regenerates it next session.
 
 ## Step 1 — Read the memory in this exact order

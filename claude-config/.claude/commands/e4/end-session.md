@@ -79,7 +79,9 @@ is derived in the generated active-tasks view, and per-session history already l
 ## Step 3 — Update task state in `.ai-memory/tasks/` (NOT active-tasks.md)
 `active-tasks.md` is a **generated, gitignored view** — never hand-edit it.
 - In the relevant `tasks/<id>.md` file, set `status:` to one of `todo` / `in-progress` / `blocked` / `in-review` / `done`, and update its **Checkpoints** / **Notes**.
-- Then regenerate the view: run `python3 <path>/generate_status.py --project .` (search `~/AI-Vault/automation/python/`, then `./scripts/`; on Windows try `python` if `python3` is missing). If the generator isn't found, skip — the SessionStart hook regenerates it next session.
+- Then regenerate the view: run `python3 "<scripts dir>/generate_status.py" --project .` where `<scripts dir>` is
+  !`python3 -c "import os; print(os.environ.get('AI_MEMORY_PYDIR') or os.path.join(os.environ.get('AI_VAULT') or os.path.expanduser('~/AI-Vault'), 'automation', 'python'))"`;
+  if the script isn't there, try `./scripts/`. Quote the path (it may contain spaces); on Windows try `python` if `python3` is missing. If the generator isn't found, skip — the SessionStart hook regenerates it next session.
 
 ## Step 4 — Update `.ai-memory/decisions.md` (only if needed)
 If a lasting architectural decision was made this session, add an ADR entry (Context / Decision / Alternatives / Consequences) and add it to the index table. If none, skip.

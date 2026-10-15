@@ -55,6 +55,23 @@ class PortableContractTest(unittest.TestCase):
         self.assertIn("Decide by the **import line**, not by the heading", text)
         self.assertIn("add the line `@AGENTS.md` at the end of that section", text)
 
+    def test_skills_resolveVaultFromEnvNotOnlyHomeDefault(self):
+        for f in SKILLS.glob("*/SKILL.md"):
+            text = f.read_text(encoding="utf-8")
+            self.assertIn("AI_VAULT", text, f.parent.name)
+            self.assertNotIn("search `~/AI-Vault/automation/python/`", text, f.parent.name)
+
+    def test_claudeCommands_injectResolvedPathsWithPermission(self):
+        for f in (ROOT / "claude-config/.claude/commands/e4").glob("*.md"):
+            if f.stem == "CONTRIBUTORS":
+                continue
+            text = f.read_text(encoding="utf-8")
+            # Verified headless: `${VAR:-x}`, `$VAR` and a failing `printenv` all make Claude Code
+            # drop the whole command; a python3 one-liner that always exits 0 works.
+            self.assertIn(" !`python3 -c \"import os; print(os.environ.get('AI_MEMORY_PYDIR')", text, f.name)
+            self.assertNotIn("${AI_", text, f.name)
+            self.assertRegex(text, r"(?m)^allowed-tools: .*Bash\(python3:\*\)", f.name)
+
     def test_copilotPointer_referencesAgentsMd(self):
         text = (ROOT / "copilot-config/.github/copilot-instructions.md").read_text(encoding="utf-8")
         self.assertIn("](../AGENTS.md)", text)

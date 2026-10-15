@@ -6,3 +6,6 @@ allowed-tools: Read, Bash(ls:*), Bash(git status:*), Bash(git log:*), Bash(pytho
 <!-- region:regen-fallback -->
 the SessionStart hook regenerates it next session
 <!-- /region:regen-fallback -->
+<!-- region:scripts-dir -->
+!`python3 -c "import os; print(os.environ.get('AI_MEMORY_PYDIR') or os.path.join(os.environ.get('AI_VAULT') or os.path.expanduser('~/AI-Vault'), 'automation', 'python'))"`
+<!-- /region:scripts-dir -->

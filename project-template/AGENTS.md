@@ -8,9 +8,9 @@
 
 ## 0. Identity & Scope
 
-You are working as a senior engineer on this project. You have **persistent memory** stored in `.ai-memory/` (committed to this repo — the source of truth). Global preferences and standards may live in the developer's Obsidian vault (`~/AI-Vault/User/`); read them when that path is reachable from your environment. Treat both as authoritative; project rules in `.ai-memory/onboarding.md` win on conflict.
+You are working as a senior engineer on this project. You have **persistent memory** stored in `.ai-memory/` (committed to this repo — the source of truth). Global preferences and standards may live in the developer's Obsidian vault (`$AI_VAULT/User/`; `AI_VAULT` defaults to `~/AI-Vault`); read them when that path is reachable from your environment. Treat both as authoritative; project rules in `.ai-memory/onboarding.md` win on conflict.
 
-> Cloud/remote agents usually cannot reach `~/AI-Vault/`. Everything required to work on this
+> Cloud/remote agents usually cannot reach the vault. Everything required to work on this
 > project must therefore be in this repo — the "Project Conventions Snapshot" in `onboarding.md`
 > carries the essential standards.
 
@@ -57,7 +57,7 @@ If `.ai-memory/` does not exist, offer to initialize it (Section 8).
 
 ## 3. Coding Rules
 
-- Follow the global coding standards (`~/AI-Vault/User/coding-standards.md`, when reachable) for naming, error handling, testing, security. Project-specific overrides in `onboarding.md` win on conflict.
+- Follow the global coding standards (`$AI_VAULT/User/coding-standards.md`, when reachable) for naming, error handling, testing, security. Project-specific overrides in `onboarding.md` win on conflict.
 - Make **incremental** changes; prefer small, reviewable diffs over large rewrites.
 - Always pair implementation with tests.
 - No secrets in code — use `.env`. Never log PII, tokens, or passwords.
@@ -94,7 +94,7 @@ Update memory by **editing the markdown files directly**. Keep entries concise a
 - The task file's `status:` front-matter (`todo` / `in-progress` / `blocked` / `in-review` / `done`)
   is the **source of truth**. `active-tasks.md` is a generated view of it — never hand-edit it.
 - Update the task file's **Checkpoints** as you progress so any session can resume mid-task.
-- When a task is done: check all acceptance criteria, set `status: done`, regenerate `active-tasks.md`, and (optionally) let the archive script move the task file to `~/AI-Vault/Archive/tasks/`.
+- When a task is done: check all acceptance criteria, set `status: done`, regenerate `active-tasks.md`, and (optionally) let the archive script move the task file to `$AI_VAULT/Archive/tasks/`.
 
 ---
 
@@ -122,14 +122,14 @@ This is the most important habit: a good session file is what makes the *next* s
 - Public functions get docstrings/JSDoc; modules get a top-of-file purpose comment.
 - Update the project README when adding setup steps or env vars.
 - Significant architectural changes require an ADR in `decisions.md`.
-- When you learn something broadly reusable, suggest adding a note to `~/AI-Vault/Knowledge/`.
+- When you learn something broadly reusable, suggest adding a note to `$AI_VAULT/Knowledge/`.
 - Use Obsidian-style links `[[note]]` inside memory files so the graph stays connected.
 
 ---
 
 ## 8. Initialization & Automation
 
-If memory is missing or you need housekeeping, use the `e4-init` skill or the scripts in `~/AI-Vault/automation/python/` (or the project's `scripts/`):
+If memory is missing or you need housekeeping, use the `e4-init` skill or the scripts in `$AI_MEMORY_PYDIR` (default `$AI_VAULT/automation/python/`; or the project's `scripts/`):
 - `init_project_memory` — scaffold `.ai-memory/` for a new project.
 - `generate_status` — regenerate `active-tasks.md` from `tasks/*.md`.
 - `validate_memory` — check `.ai-memory/` structure and naming contracts.

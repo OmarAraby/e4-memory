@@ -79,7 +79,9 @@ is derived in the generated active-tasks view, and per-session history already l
 ## Step 3 — Update task state in `.ai-memory/tasks/` (NOT active-tasks.md)
 `active-tasks.md` is a **generated, gitignored view** — never hand-edit it.
 - In the relevant `tasks/<id>.md` file, set `status:` to one of `todo` / `in-progress` / `blocked` / `in-review` / `done`, and update its **Checkpoints** / **Notes**.
-- Then regenerate the view: run `python3 <path>/generate_status.py --project .` (search `~/AI-Vault/automation/python/`, then `./scripts/`; on Windows try `python` if `python3` is missing). If the generator isn't found, skip — <!-- adapter:regen-fallback -->the view is regenerated the next time the generator runs<!-- /adapter:regen-fallback -->.
+- Then regenerate the view: run `python3 "<scripts dir>/generate_status.py" --project .` where `<scripts dir>` is
+  <!-- adapter:scripts-dir -->`$AI_MEMORY_PYDIR` if set, else `$AI_VAULT/automation/python` if `AI_VAULT` is set, else `~/AI-Vault/automation/python` (read the variables with `echo "$AI_MEMORY_PYDIR" "$AI_VAULT"`; PowerShell: `$env:AI_MEMORY_PYDIR`, `$env:AI_VAULT`)<!-- /adapter:scripts-dir -->;
+  if the script isn't there, try `./scripts/`. Quote the path (it may contain spaces); on Windows try `python` if `python3` is missing. If the generator isn't found, skip — <!-- adapter:regen-fallback -->the view is regenerated the next time the generator runs<!-- /adapter:regen-fallback -->.
 
 ## Step 4 — Update `.ai-memory/decisions.md` (only if needed)
 If a lasting architectural decision was made this session, add an ADR entry (Context / Decision / Alternatives / Consequences) and add it to the index table. If none, skip.

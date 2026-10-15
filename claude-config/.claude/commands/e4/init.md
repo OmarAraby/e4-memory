@@ -19,15 +19,17 @@ section), `.gitattributes`, `.gitignore`, `./.claude/hooks/`, hooks in `./.claud
 - If ALL pieces already exist → report that the project is fully set up and stop.
 - Reinitialize memory from scratch ONLY if the user explicitly asks.
 
-Wherever this workflow says "the e4 vault", search these locations (first match wins):
-`$AI_VAULT/`, `~/AI-Vault/`, `./scripts/`.
+Resolve these two locations once, before Step 2 (quote them in commands — they may contain spaces):
+- **`<e4 vault>`** = !`python3 -c "import os; print(os.environ.get('AI_VAULT') or os.path.expanduser('~/AI-Vault'))"`.
+  If that folder doesn't exist, use `./scripts/` instead.
+- **`<scripts dir>`** = !`python3 -c "import os; print(os.environ.get('AI_MEMORY_PYDIR') or os.path.join(os.environ.get('AI_VAULT') or os.path.expanduser('~/AI-Vault'), 'automation', 'python'))"`.
 
 ## Step 2 — Scaffold the structure (only if `.ai-memory/` is missing)
 Prefer the bundled initializer if available; otherwise create files yourself.
 
 Look for the init script in these locations (first match wins):
 - `./scripts/init_project_memory.py`
-- `~/AI-Vault/automation/python/init_project_memory.py`
+- `<scripts dir>/init_project_memory.py`
 - `~/.claude/ai-memory/init_project_memory.py`
 
 If found, run it (try `python3`, fall back to `python` on Windows):
@@ -97,8 +99,7 @@ nudges to run `/e4:end-session`. Install them **into this project only** — nev
 (a global hook would fire in every repo you open, including ones with no `.ai-memory/`).
 
 Find the hook source (first match wins):
-- `$AI_VAULT/claude-config/.claude/` (env var)
-- `~/AI-Vault/claude-config/.claude/`
+- `<e4 vault>/claude-config/.claude/`
 - `./scripts/.claude/`
 
 If a source is found AND `./.claude/hooks/` does not already exist:
@@ -115,8 +116,7 @@ Claude Code reads `AGENTS.md` on its own only when the project has **no** `CLAUD
 shared contract is pulled in with an `@AGENTS.md` import.
 
 If `CLAUDE.md` does not exist at the project root, create it from the bundled template
-(`project-template/CLAUDE.md` in the same locations as the hook source, one level up from
-`claude-config/`) — a thin file that imports `@AGENTS.md` and adds the Claude Code specifics.
+`<e4 vault>/project-template/CLAUDE.md` — a thin file that imports `@AGENTS.md` and adds the Claude Code specifics.
 If no template is found, write a `CLAUDE.md` whose first content line is `@AGENTS.md`.
 
 Wherever this step writes the `@AGENTS.md` line, also add (once) the sentence: "If the `AGENTS.md`

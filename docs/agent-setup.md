@@ -23,8 +23,13 @@ All agents share the same `.ai-memory/` — there is one knowledge base, not one
 
 | Variable | Purpose | Example | Required |
 |---|---|---|---|
-| `AI_VAULT` | vault root | `~/AI-Vault` | optional (defaults to `~/AI-Vault`) |
-| `AI_MEMORY_PYDIR` | `automation/python` dir | `~/AI-Vault/automation/python` | optional (same default) |
+| `AI_VAULT` | vault root | `~/AI-Vault` | optional (defaults to `~/AI-Vault`) — **set it if the vault lives anywhere else** |
+| `AI_MEMORY_PYDIR` | `automation/python` dir | `~/AI-Vault/automation/python` | optional (defaults to `$AI_VAULT/automation/python`) |
+
+Every workflow and hook resolves the same way: scripts = `$AI_MEMORY_PYDIR` → `$AI_VAULT/automation/python`
+→ `~/AI-Vault/automation/python`, then `./scripts/` as a last resort; templates and skills come from
+`$AI_VAULT` (→ `~/AI-Vault`). In Claude Code the `/e4:*` commands resolve these at invocation with a
+`python3` one-liner, so `python3` must be on PATH.
 | `AI_PROJECTS_ROOT` | where your repos live (daily roll-up) | `~/code` | optional |
 
 ## 2. Install the portable core in a project (every agent)

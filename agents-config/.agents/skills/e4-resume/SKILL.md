@@ -7,8 +7,9 @@ description: "[e4] Re-read the project's .ai-memory/ in order and post a Resume 
 
 ## Step 0 — Refresh the generated view
 `active-tasks.md` is a **generated, gitignored view** of `tasks/*.md`. Refresh it before reading so
-you never resume off a stale board: run `python3 <path>/generate_status.py --project .`
-(search `~/AI-Vault/automation/python/`, then `./scripts/`; on Windows try `python` if `python3` is missing). If the generator isn't found, skip it
+you never resume off a stale board: run `python3 "<scripts dir>/generate_status.py" --project .`
+where `<scripts dir>` is <!-- adapter:scripts-dir -->`$AI_MEMORY_PYDIR` if set, else `$AI_VAULT/automation/python` if `AI_VAULT` is set, else `~/AI-Vault/automation/python` (read the variables with `echo "$AI_MEMORY_PYDIR" "$AI_VAULT"`; PowerShell: `$env:AI_MEMORY_PYDIR`, `$env:AI_VAULT`)<!-- /adapter:scripts-dir -->; if the script isn't there, try `./scripts/`.
+Quote the path (it may contain spaces); on Windows try `python` if `python3` is missing. If the generator isn't found, skip it
 and read the existing file — <!-- adapter:regen-fallback -->the view is regenerated the next time the generator runs<!-- /adapter:regen-fallback -->.
 
 ## Step 1 — Read the memory in this exact order

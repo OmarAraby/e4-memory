@@ -38,8 +38,10 @@ Create a new task for: **$ARGUMENTS**
    ## Notes / Log
    ```
 3. **Do NOT edit `active-tasks.md`** — it is a generated, gitignored view. Regenerate it from the task
-   files: run `python3 <path>/generate_status.py --project .` (search `~/AI-Vault/automation/python/`,
-   then `./scripts/`; on Windows try `python` if `python3` is missing). If the generator isn't found, skip — the SessionStart hook regenerates it next session.
+   files: run `python3 "<scripts dir>/generate_status.py" --project .` where `<scripts dir>` is
+   !`python3 -c "import os; print(os.environ.get('AI_MEMORY_PYDIR') or os.path.join(os.environ.get('AI_VAULT') or os.path.expanduser('~/AI-Vault'), 'automation', 'python'))"`;
+   if the script isn't there, try `./scripts/`. Quote the path (it may contain spaces); on Windows try
+   `python` if `python3` is missing. If the generator isn't found, skip — the SessionStart hook regenerates it next session.
 4. Print the created ID, title, and the path.
 
 Ask one clarifying question only if the title is too vague to write a Goal.
