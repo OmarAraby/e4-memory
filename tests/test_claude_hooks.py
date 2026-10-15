@@ -67,6 +67,31 @@ class ClaudeHooksTest(unittest.TestCase):
             self.assertEqual(r.returncode, 0, r.stderr)
             self.assertEqual(r.stdout.strip(), expected, extra)
 
+    def test_injectedCommands_exitZeroInEveryRepoState(self):
+        # Claude Code silently drops a whole slash command when one `!` command exits non-zero
+        # (verified headless: `git log` in a repo with no commits emptied /e4:end-session).
+        cmds = ROOT / "claude-config/.claude/commands/e4"
+        injected = [(f.name, c) for f in sorted(cmds.glob("*.md"))
+                    for c in re.findall(r"(?<=\s)!`([^`]+)`", f.read_text(encoding="utf-8"))]
+        self.assertGreater(len(injected), 5)
+        with tempfile.TemporaryDirectory() as tmp:
+            no_git, fresh, committed = (Path(tmp) / n for n in ("no-git", "fresh", "committed"))
+            for d in (no_git, fresh, committed):
+                d.mkdir()
+            env = {**os.environ, "GIT_CEILING_DIRECTORIES": tmp,
+                   "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
+                   "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"}
+            for d in (fresh, committed):
+                subprocess.run(["git", "init", "-q"], cwd=d, env=env, check=True)
+            (committed / "a.txt").write_text("a", encoding="utf-8")
+            subprocess.run(["git", "add", "a.txt"], cwd=committed, env=env, check=True)
+            subprocess.run(["git", "commit", "-qm", "a"], cwd=committed, env=env, check=True)
+            for d in (no_git, fresh, committed):
+                for name, command in injected:
+                    r = subprocess.run([BASH, "-c", command], cwd=d, env=env,
+                                       capture_output=True, text=True)
+                    self.assertEqual(r.returncode, 0, f"{name} in {d.name}: {command}")
+
     def test_sessionStart_withoutMemory_suggestsInit(self):
         with tempfile.TemporaryDirectory() as empty:
             r = subprocess.run([BASH, str(HOOKS / "session_start.sh")], cwd=empty, input="{}",

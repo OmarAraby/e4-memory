@@ -52,7 +52,7 @@ class SyncAgentAdaptersTest(unittest.TestCase):
     def test_generatedCommands_keepClaudeOnlyFeatures(self):
         cmds = ROOT / "claude-config" / ".claude" / "commands" / "e4"
         end = (cmds / "end-session.md").read_text(encoding="utf-8")
-        self.assertIn('!`git status --short 2>/dev/null`', end)
+        self.assertIn('!`git status --short 2>/dev/null || echo', end)
         self.assertIn('"$ARGUMENTS"', end)
         init = (cmds / "init.md").read_text(encoding="utf-8")
         self.assertIn("session_start.sh", init)

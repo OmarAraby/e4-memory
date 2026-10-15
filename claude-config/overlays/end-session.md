@@ -8,9 +8,9 @@ allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(date:
 - Current date/time: !`date "+%Y-%m-%d %H:%M"`
 - Filename stamp: !`date "+%Y-%m-%d-%H%M%S"`
 - Branch: !`git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "no-git"`
-- Uncommitted changes: !`git status --short 2>/dev/null`
-- Files changed since last commit: !`git diff --name-only HEAD 2>/dev/null`
-- Recent commits this session: !`git log --oneline -10 2>/dev/null`
+- Uncommitted changes: !`git status --short 2>/dev/null || echo "(not a git repository)"`
+- Files changed since last commit: !`git diff --name-only HEAD 2>/dev/null || echo "(no commits yet - see uncommitted changes)"`
+- Recent commits this session: !`git log --oneline -10 2>/dev/null || echo "(no commits yet)"`
 <!-- /region:facts -->
 <!-- region:args -->
 "$ARGUMENTS"

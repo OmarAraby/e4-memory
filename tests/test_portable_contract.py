@@ -72,6 +72,16 @@ class PortableContractTest(unittest.TestCase):
             self.assertNotIn("${AI_", text, f.name)
             self.assertRegex(text, r"(?m)^allowed-tools: .*Bash\(python3:\*\)", f.name)
 
+    def test_scripts_checkedOutWithLfLineEndings(self):
+        # Hooks are copied from this checkout into projects; CRLF breaks bash and shebangs.
+        scripts = [*ROOT.glob("automation/bash/*.sh"), *ROOT.glob("claude-config/.claude/hooks/*")]
+        self.assertTrue(scripts)
+        for f in scripts:
+            self.assertNotIn(b"\r\n", f.read_bytes(), f"{f.relative_to(ROOT)} has CRLF line endings")
+        attrs = (ROOT / ".gitattributes").read_text(encoding="utf-8")
+        self.assertRegex(attrs, r"(?m)^\*\.sh\s+text\s+eol=lf$")
+        self.assertRegex(attrs, r"(?m)^claude-config/\.claude/hooks/\*\s+text\s+eol=lf$")
+
     def test_copilotPointer_referencesAgentsMd(self):
         text = (ROOT / "copilot-config/.github/copilot-instructions.md").read_text(encoding="utf-8")
         self.assertIn("](../AGENTS.md)", text)
