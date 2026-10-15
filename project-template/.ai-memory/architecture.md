@@ -56,7 +56,7 @@ src/
 ```
 
 ## Design Principles in Effect
-> The architectural rules this codebase follows. Claude must respect these.
+> The architectural rules this codebase follows. AI agents must respect these.
 - 
 - 
 

@@ -7,9 +7,13 @@ Copy the `.claude/` directory here into your project root (or merge into an exis
 
 Contents:
 - `.claude/commands/e4/` → slash commands: /e4:init, /e4:end-session, /e4:resume, /e4:new-task
+                         (GENERATED from ../agents-config/.agents/skills/ + overlays/ by
+                          automation/python/sync_agent_adapters.py — don't edit them directly)
 - `.claude/hooks/`     → session_start.sh, session_end.sh, stop_reminder.sh,
                          guard-destructive-git.py (PreToolUse: blocks destructive git + secret commits)
 - `.claude/settings.json` → wires the hooks to SessionStart / SessionEnd / Stop
 
 For commands available in ALL projects, copy the command files to ~/.claude/commands/ instead.
-Full guide: ../docs/COMMANDS-AND-HOOKS.md
+`overlays/` is NOT installed into projects — it holds the Claude-only parts of each command.
+
+Full guide: ../docs/COMMANDS-AND-HOOKS.md · other agents: ../docs/agent-setup.md

@@ -2,6 +2,11 @@
 
 How to wire `/e4:init`, `/e4:end-session`, and automatic session hooks into Claude Code. Verified against the current Claude Code docs (slash commands + hooks reference).
 
+> The `/e4:*` command files are **generated** from the agent-neutral skills in
+> `agents-config/.agents/skills/` plus `claude-config/overlays/` — edit those and run
+> `python automation/python/sync_agent_adapters.py`. Other agents (Copilot, Cursor) use the skills
+> directly; see [`agent-setup.md`](agent-setup.md).
+
 ---
 
 ## The key concept: commands vs hooks

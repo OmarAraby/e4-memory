@@ -43,7 +43,7 @@ created: {{date}}
 - 
 
 ## Implementation Notes
-> Anything Claude or the team needs to remember when acting on this.
+> Anything the AI agent or the team needs to remember when acting on this.
 
 ## Links
 - Related ADRs: [[ ]]

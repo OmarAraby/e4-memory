@@ -22,7 +22,7 @@ This directory is the **persistent brain** for this project. It survives session
 > `tasks/*.md` by `generate_status.py`, and `sessions/` is append-only (one new file per session,
 > never an edit). Both exist so parallel git branches never conflict on memory.
 
-## Read Order (Claude)
+## Read Order (AI agents)
 `onboarding → context → architecture → active-tasks → progress → decisions → sessions/ (newest file)`
 
 The newest session is the **lexically-last** file in `sessions/` — names are timestamp-prefixed,

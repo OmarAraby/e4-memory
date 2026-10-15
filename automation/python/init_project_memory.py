@@ -5,6 +5,8 @@ init_project_memory.py — Scaffold a .ai-memory/ structure + CLAUDE.md in a pro
 Usage:
     python init_project_memory.py /path/to/project --name "My Project"
     python init_project_memory.py .            # uses current dir, infers name
+    python init_project_memory.py . --with-agents-md --with-skills   # Copilot / Cursor / any agent
+    python init_project_memory.py . --with-agents-md --with-claude-md --with-skills   # + Claude Code
 
 Idempotent: won't overwrite existing files unless --force is passed.
 
@@ -15,9 +17,18 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 from pathlib import Path
+import shutil
 import sys
 
 TODAY = dt.date.today().isoformat()
+
+# Agent-neutral sources shipped in the e4 repo this script lives in (automation/python/ -> repo root).
+# Guarded: the script may be copied to a shallow path such as /scripts/ where parents[2] doesn't exist.
+_HERE = Path(__file__).resolve()
+E4_ROOT = _HERE.parents[2] if len(_HERE.parents) > 2 else _HERE.parent
+AGENTS_MD_TEMPLATE = E4_ROOT / "project-template" / "AGENTS.md"
+CLAUDE_MD_TEMPLATE = E4_ROOT / "project-template" / "CLAUDE.md"
+SKILLS_SRC = E4_ROOT / "agents-config" / ".agents" / "skills"
 
 FILES: dict[str, str] = {
     "onboarding.md": """---
@@ -28,7 +39,7 @@ updated: {today}
 
 # 🚀 Onboarding — READ THIS FIRST
 
-> Claude: read this completely before doing anything else.
+> AI agent: read this completely before doing anything else.
 
 ## What is this project?
 > One paragraph elevator pitch.
@@ -202,6 +213,50 @@ CLAUDE_MD_POINTER = """# CLAUDE.md
 """
 
 
+# Used only when the script runs outside the e4 repo (template not found next to it).
+AGENTS_MD_FALLBACK = """# AGENTS.md
+
+> Operating instructions for any AI coding agent on this project (e4 persistent memory).
+> At session start, read `.ai-memory/` in this order:
+> onboarding -> context -> architecture -> active-tasks -> progress -> sessions/ (newest) -> decisions,
+> then post a Resume Summary. Never hand-edit `active-tasks.md` (generated from `tasks/*.md`) or an
+> existing `sessions/` file. After significant work, update progress.md, the relevant tasks/ file,
+> decisions.md (if needed), and write a new file in `.ai-memory/sessions/` for the session.
+>
+> (Replace this stub with project-template/AGENTS.md from the e4 repo for the complete rules.)
+"""
+
+# CLAUDE.md when AGENTS.md is also installed: Claude Code reads AGENTS.md on its own only when there
+# is no CLAUDE.md, so the shared contract is imported rather than copied.
+CLAUDE_MD_IMPORT_FALLBACK = """# CLAUDE.md
+
+> Claude Code entry point. The operating contract is agent-neutral and lives in AGENTS.md (imported below).
+
+@AGENTS.md
+"""
+
+
+def template(path: Path, fallback: str) -> str:
+    """Return the template file's text, or the fallback if the e4 repo isn't next to this script."""
+    return path.read_text(encoding="utf-8") if path.is_file() else fallback
+
+
+def install_skills(root: Path, force: bool) -> list[str]:
+    """Copy the shared e4-* Agent Skills into <root>/.agents/skills/; existing folders need --force."""
+    if not SKILLS_SRC.is_dir():
+        return [f"skip  {root / '.agents' / 'skills'} (source not found: {SKILLS_SRC})"]
+    out = []
+    for src in sorted(SKILLS_SRC.glob("e4-*")):
+        dest = root / ".agents" / "skills" / src.name
+        if dest.exists() and not force:
+            out.append(f"skip  {dest}")
+            continue
+        # --force overwrites e4's own files but never deletes anything else in the folder.
+        shutil.copytree(src, dest, dirs_exist_ok=True)
+        out.append(f"write {dest}")
+    return out
+
+
 def write(path: Path, content: str, force: bool) -> str:
     if path.exists() and not force:
         return f"skip  {path}"
@@ -216,7 +271,12 @@ def main() -> int:
     ap.add_argument("--name", help="Project name (default: folder name)")
     ap.add_argument("--force", action="store_true", help="Overwrite existing files")
     ap.add_argument("--with-claude-md", action="store_true",
-                    help="Also create a stub CLAUDE.md at project root")
+                    help="Also create a stub CLAUDE.md at project root "
+                         "(imports AGENTS.md when combined with --with-agents-md)")
+    ap.add_argument("--with-agents-md", action="store_true",
+                    help="Also create AGENTS.md (agent-neutral contract read by Copilot, Cursor, ...)")
+    ap.add_argument("--with-skills", action="store_true",
+                    help="Also install the shared e4 Agent Skills into .agents/skills/")
     args = ap.parse_args()
 
     root = Path(args.project).expanduser().resolve()
@@ -239,8 +299,17 @@ def main() -> int:
     seed = mem / "sessions" / f"{TODAY}-000000-init.md"
     print(write(seed, SEED_SESSION.format(today=TODAY), args.force))
 
+    if args.with_agents_md:
+        print(write(root / "AGENTS.md", template(AGENTS_MD_TEMPLATE, AGENTS_MD_FALLBACK), args.force))
+
     if args.with_claude_md:
-        print(write(root / "CLAUDE.md", CLAUDE_MD_POINTER, args.force))
+        claude_md = (template(CLAUDE_MD_TEMPLATE, CLAUDE_MD_IMPORT_FALLBACK)
+                     if args.with_agents_md else CLAUDE_MD_POINTER)
+        print(write(root / "CLAUDE.md", claude_md, args.force))
+
+    if args.with_skills:
+        for line in install_skills(root, args.force):
+            print(line)
 
     print("\nDone. Next: fill in context.md and architecture.md, then start working.")
     return 0

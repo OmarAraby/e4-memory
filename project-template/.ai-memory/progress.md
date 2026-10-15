@@ -6,7 +6,7 @@ updated: 2026-01-01
 
 # Progress
 
-> The single source of truth for "where are we?". Claude updates this after every significant work session.
+> The single source of truth for "where are we?". The AI agent updates this after every significant work session.
 
 ## Status at a Glance
 - **Phase**: (Planning / MVP / Beta / Production / Maintenance)

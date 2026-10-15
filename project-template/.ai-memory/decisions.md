@@ -7,7 +7,7 @@ updated: 2026-01-01
 # Architecture Decisions Log
 
 > Running log of significant decisions. Each entry is a mini-ADR.
-> **Claude: consult this before making any architectural change. Add an entry whenever you make a decision with lasting consequences.**
+> **AI agent: consult this before making any architectural change. Add an entry whenever you make a decision with lasting consequences.**
 
 ## Index
 | ID | Title | Status | Date |

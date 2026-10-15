@@ -9,7 +9,7 @@ created: {{date}}
 **Project**: 
 **Session start**: {{time}}
 **Session end**: 
-**Claude model**: 
+**Agent / model**: 
 **Branch**: 
 
 ## TL;DR

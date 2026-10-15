@@ -6,7 +6,7 @@ updated: 2026-01-01
 
 # 🚀 Onboarding — READ THIS FIRST
 
-> **Claude: this is your entry point. Read this file completely before doing anything else in this project.**
+> **AI agent: this is your entry point. Read this file completely before doing anything else in this project.**
 
 ## What is this project?
 > One paragraph. The elevator pitch. What it does and for whom.
@@ -22,7 +22,7 @@ updated: 2026-01-01
    timestamp-prefixed names sort chronologically, so the last one is the newest)
 
 ## Golden Rules for this project
-> Project-specific overrides. General rules live in `CLAUDE.md` at repo root.
+> Project-specific overrides. General rules live in `AGENTS.md` (or `CLAUDE.md`) at repo root.
 - 
 - 
 

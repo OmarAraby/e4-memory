@@ -1,6 +1,6 @@
-# Claude Code Workflow & Explicit Rules
+# Agent Workflow & Explicit Rules
 
-This document specifies the exact, deterministic workflow Claude follows. The same rules live in condensed form inside `CLAUDE.md` (which Claude reads automatically). This is the expanded reference.
+This document specifies the exact, deterministic workflow every AI coding agent follows (Claude Code, GitHub Copilot, Cursor, ...). The same rules live in condensed form in the per-project `AGENTS.md` (`project-template/AGENTS.md`; Claude Code loads it through the `@AGENTS.md` import in `CLAUDE.md`). This is the expanded reference — keep the two consistent.
 
 ## The Memory Loop
 
@@ -49,7 +49,7 @@ A6. Read the NEWEST file in .ai-memory/sessions/ (timestamp-prefixed
 A7. Open .ai-memory/decisions.md index (read full ADRs on demand).
 A8. Post a Resume Summary (≤8 lines): project, phase, health,
     current task, last TL;DR, "picking up at", blockers.
-A9. If .ai-memory/ is absent → offer to run init_project_memory.
+A9. If .ai-memory/ is absent → offer to run init_project_memory (or e4-init).
 ```
 
 ## Rule Set B — Before Making Changes
@@ -80,10 +80,10 @@ C4. Never leave debug prints or secrets.
 ## Rule Set D — After Completing Work
 
 ```
-D1. progress.md — move items between Completed/In-Progress/Up-Next;
-    bump "Last updated"; adjust completion % and Health.
-D2. active-tasks.md — update current task status + checkpoint + next step;
-    promote the next task if current is done.
+D1. progress.md — Phase, Health, Milestones only (low-churn fields);
+    bump "Last updated". Completion is derived in active-tasks.md.
+D2. tasks/<task-id>.md — update status + checkpoint + next step, then
+    regenerate active-tasks.md (generated view — never hand-edit it).
 D3. decisions.md — if a lasting decision was made, add an ADR entry.
 D4. architecture.md — if structure changed, reflect new reality.
 D5. context.md — if scope/goals changed, update.
@@ -111,7 +111,7 @@ E4. State the single first action for the next session.
 
 **User (new session)**: "let's keep going"
 
-**Claude** runs Rule Set A, then:
+**The agent** runs Rule Set A, then:
 ```
 📋 Resumed: MyApp
 Phase: MVP | Health: 🟢

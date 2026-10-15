@@ -6,7 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `D:\AI-Vault` is the **global Obsidian vault** for the **AI Memory System for Claude Code** — a persistent-memory system that gives Claude long-term memory across projects, sessions, and restarts. The full distribution currently ships as zip bundles in the root (`files.zip`, `files (1).zip`); `files (1).zip` is the newer, more complete bundle (adds `claude-config/` slash commands + hooks and `COMMANDS-AND-HOOKS.md`). Unpacking `vault-structure/` from the bundle into this directory is what turns it into the live vault.
 
-This is a **docs + templates + automation-scripts** project, not a compiled application. There is no build step. The Python automation is stdlib-only (no dependencies, no package manifest), the Bash/PowerShell scripts are thin wrappers over it, and there is no test suite — do not invent build/lint/test commands.
+This is a **docs + templates + automation-scripts** project, not a compiled application. There is no build step. The Python automation is stdlib-only (no dependencies, no package manifest) and the Bash/PowerShell scripts are thin wrappers over it. Tests are stdlib `unittest`: `python -m unittest discover -s tests` (hook tests need `bash`); `python automation/python/sync_agent_adapters.py --check` verifies the generated Claude commands — do not invent other build/lint commands.
+
+## Agent-agnostic layout (portable core + adapters)
+
+See `docs/architecture/agent-agnostic-architecture.md`. The per-project contract is `project-template/AGENTS.md` (agent-neutral); `project-template/CLAUDE.md` only `@AGENTS.md`-imports it and adds Claude specifics. Workflow logic lives once in `agents-config/.agents/skills/e4-*/SKILL.md` (read natively by Copilot and Cursor); the Claude `/e4:*` commands in `claude-config/.claude/commands/e4/` are **generated** from skill + `claude-config/overlays/<name>.md` — never hand-edit them, edit the source and run `sync_agent_adapters.py`.
 
 ## The two-layer memory model (the core architecture)
 
@@ -28,15 +32,21 @@ A `SessionEnd` hook **cannot** make the model write a summary (the session is en
 
 ## The workflow contract (rule sets A–E)
 
-`project-template/CLAUDE.md` is the per-project operating contract Claude follows automatically, formalized in `docs/WORKFLOW.md` as five rule sets: **A** entering a project (read order + post a ≤8-line Resume Summary), **B** before changes (restate task, check ADRs — never silently contradict an accepted one, supersede instead), **C** during work (incremental diffs + task checkpoints), **D** after work (update `progress.md`/`tasks/`/`decisions.md`/`architecture.md`), **E** session end (write a new `sessions/` file). Note `active-tasks.md` is a **generated, gitignored view** of `tasks/*.md` — never hand-edited. When editing the template or workflow doc, keep these two files consistent — the template encodes the doc.
+`project-template/AGENTS.md` is the per-project operating contract every agent follows (Claude via the `@AGENTS.md` import in `project-template/CLAUDE.md`), formalized in `docs/WORKFLOW.md` as five rule sets: **A** entering a project (read order + post a ≤8-line Resume Summary), **B** before changes (restate task, check ADRs — never silently contradict an accepted one, supersede instead), **C** during work (incremental diffs + task checkpoints), **D** after work (update `progress.md`/`tasks/`/`decisions.md`/`architecture.md`), **E** session end (write a new `sessions/` file). Note `active-tasks.md` is a **generated, gitignored view** of `tasks/*.md` — never hand-edited. When editing the template or workflow doc, keep these two files consistent — the template encodes the doc.
 
 ## Automation commands
 
 Python (cross-platform core, run from `automation/python/`):
 
 ```bash
-# Scaffold .ai-memory/ in a project (+ optional CLAUDE stub)
-python3 init_project_memory.py <project-root> --name "MyApp" --with-claude-md [--force]
+# Scaffold .ai-memory/ in a project (+ optional AGENTS.md, shared skills, CLAUDE.md importing AGENTS.md)
+python3 init_project_memory.py <project-root> --name "MyApp" [--with-agents-md] [--with-skills] [--with-claude-md] [--force]
+
+# Validate a project's memory + agent wiring (read-only)
+python3 validate_memory.py --project <project-root> --agents [--check-links] [--strict]
+
+# Regenerate the Claude /e4:* commands from the shared skills (--check = drift detection)
+python3 sync_agent_adapters.py [--check]
 
 # Roll today's session files into the global daily note
 python3 generate_daily_summary.py --vault ~/AI-Vault --projects-root ~/code [--date YYYY-MM-DD]
