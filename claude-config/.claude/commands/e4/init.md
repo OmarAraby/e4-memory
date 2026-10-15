@@ -14,7 +14,7 @@ Project name: "$ARGUMENTS" (if empty, use the current folder name).
 ## Step 1 — Detect what's already installed
 This workflow is a **top-up**: install only what is MISSING, never overwrite what exists. Check
 independently for each piece — `.ai-memory/`, `./.agents/skills/e4-*`, `AGENTS.md` (and its memory
-section), `.gitattributes`, `.gitignore`, `./.claude/hooks/`, hooks in `./.claude/settings.json`, `CLAUDE.md` — and decide per piece:
+section), `.gitattributes`, `.gitignore`, `./.claude/hooks/`, hooks in `./.claude/settings.json`, `CLAUDE.md` (and its `@AGENTS.md` import line) — and decide per piece:
 - If `.ai-memory/` exists → SKIP Step 2 (do not touch existing memory), but CONTINUE to the remaining steps to add any missing pieces.
 - If ALL pieces already exist → report that the project is fully set up and stop.
 - Reinitialize memory from scratch ONLY if the user explicitly asks.
@@ -47,9 +47,9 @@ If NOT found, create the structure yourself. Create `.ai-memory/` with these fil
 - `tasks/` — empty directory
 
 ## Step 3 — Install the shared e4 skills (portable, all agents)
-If `./.agents/skills/` has no `e4-*` folders, copy every `e4-*` folder from
-`<e4 vault>/agents-config/.agents/skills/` into `./.agents/skills/`. Never overwrite an existing
-folder. GitHub Copilot and Cursor load skills from `.agents/skills/` natively.
+For each `e4-*` folder in `<e4 vault>/agents-config/.agents/skills/`, copy it into `./.agents/skills/`
+**only if that folder does not exist there yet** — so a partial install is completed. Never overwrite
+or merge into an existing folder (it may be customised). GitHub Copilot and Cursor load skills from `.agents/skills/` natively.
 If no source is found, tell the user where the skills live and continue without failing.
 
 ## Step 4 — Ensure `.gitattributes` (prevent cross-branch memory conflicts)
@@ -64,7 +64,8 @@ append only the lines not already present** (don't duplicate or reorder existing
 ```
 *.sh text eol=lf
 .ai-memory/decisions.md   merge=union
-.ai-memory/session-log.md merge=union   # legacy pre-Tier-2 repos only
+# legacy pre-Tier-2 repos only (git does not allow comments at the end of a line)
+.ai-memory/session-log.md merge=union
 ```
 `merge=union` is a built-in git driver — no `.git/config` setup needed; the committed
 `.gitattributes` carries it to every clone. It covers only the append-only files; `progress.md`
@@ -118,9 +119,19 @@ If `CLAUDE.md` does not exist at the project root, create it from the bundled te
 `claude-config/`) — a thin file that imports `@AGENTS.md` and adds the Claude Code specifics.
 If no template is found, write a `CLAUDE.md` whose first content line is `@AGENTS.md`.
 
-If `CLAUDE.md` already exists, do NOT clobber it — instead append a short `## Persistent Memory (.ai-memory)`
-section containing the line `@AGENTS.md` (plus one sentence pointing at `.ai-memory/` and the read order),
-only if such a section or import isn't already present.
+Wherever this step writes the `@AGENTS.md` line, also add (once) the sentence: "If the `AGENTS.md`
+contract is not in your context, read `AGENTS.md` at the repository root before doing anything else."
+— Claude Code skips the import when launched from a subdirectory until the external import is approved.
+
+If `CLAUDE.md` already exists, do NOT clobber it. Decide by the **import line**, not by the heading:
+- If it already contains a line that is exactly `@AGENTS.md` → leave it alone.
+- Else if it has a `## Persistent Memory (.ai-memory)` section (written by an older `/e4:init`) →
+  add the line `@AGENTS.md` at the end of that section; change nothing else.
+- Else → append a short `## Persistent Memory (.ai-memory)` section containing the line `@AGENTS.md`
+  (plus one sentence pointing at `.ai-memory/` and the read order).
+
+If the project's `AGENTS.md` existed before this run (user-owned), tell the user the import makes Claude
+Code follow its rules too.
 
 GitHub Copilot and Cursor need nothing more: both read `AGENTS.md` and `.agents/skills/` natively.
 

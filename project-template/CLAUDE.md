@@ -6,6 +6,10 @@
 
 @AGENTS.md
 
+> **If the `AGENTS.md` contract is not in your context, read `AGENTS.md` at the repository root
+> before doing anything else.** Claude Code skips the import above when it is launched from a
+> subdirectory (the file is then outside the working directory) until the import is approved.
+
 ---
 
 ## Claude Code specifics

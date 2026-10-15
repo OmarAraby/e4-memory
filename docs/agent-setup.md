@@ -116,7 +116,8 @@ Windows: `automation\powershell\Ai-Memory.ps1 daily|archive|dashboard|sync`.
 
 | Symptom | Cause / fix |
 |---|---|
-| Claude ignores `AGENTS.md` | `CLAUDE.md` exists without `@AGENTS.md` — add the line. `validate_memory.py --agents` warns about this. |
+| Claude ignores `AGENTS.md` | `CLAUDE.md` exists without `@AGENTS.md` — add the line (re-running `/e4:init` now adds it to an existing memory section). `validate_memory.py --agents` warns about this. |
+| Claude ignores `AGENTS.md` only when started in a subfolder | the import then points outside the working directory and is skipped until you approve external imports. Start Claude at the repo root, or approve once; the e4 `CLAUDE.md` also tells Claude to read `AGENTS.md` explicitly when it's missing. A `.claude/CLAUDE.md` layout needs `@../AGENTS.md`. |
 | Claude asks to approve external imports | the import points outside the repo; keep `AGENTS.md` at the repo root. |
 | Skill doesn't appear in Copilot/Cursor | `name` must be lowercase-hyphenated and equal its folder name — run `validate_memory.py --skills-dir .agents/skills`. |
 | `active-tasks.md` stale in Copilot/Cursor | no SessionStart hook there; run `generate_status.py` (the skills also do this). |

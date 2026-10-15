@@ -73,6 +73,30 @@ class InitProjectMemoryTest(unittest.TestCase):
         r = run_script("validate_memory.py", "--project", str(self.proj))
         self.assertEqual(r.returncode, 0, r.stdout)
 
+    def test_validate_bomPrefixedFiles_accepted(self):
+        self.init()
+        mem = self.proj / ".ai-memory"
+        (mem / "tasks" / "TASK-20260101-000000-bom.md").write_bytes(
+            b"\xef\xbb\xbf---\r\nstatus: in-progress\r\n---\r\n")
+        onboarding = mem / "onboarding.md"
+        onboarding.write_bytes(b"\xef\xbb\xbf" + onboarding.read_bytes())
+        r = run_script("validate_memory.py", "--project", str(self.proj), "--strict")
+        self.assertEqual(r.returncode, 0, r.stdout)
+
+    def test_validate_dotfileInSessions_ignored(self):
+        self.init()
+        (self.proj / ".ai-memory" / "sessions" / ".gitkeep").write_text("", encoding="utf-8")
+        r = run_script("validate_memory.py", "--project", str(self.proj), "--strict")
+        self.assertEqual(r.returncode, 0, r.stdout)
+
+    def test_validate_completedAlias_warnsNotErrors(self):
+        self.init()
+        (self.proj / ".ai-memory" / "tasks" / "TASK-20260101-000000-x.md").write_text(
+            "---\nstatus: completed\n---\n", encoding="utf-8")
+        r = run_script("validate_memory.py", "--project", str(self.proj))
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("use 'done'", r.stdout)
+
     def test_validate_claudeMdWithoutImport_warns(self):
         self.init("--with-agents-md", "--with-skills")
         (self.proj / "CLAUDE.md").write_text("# mine\n", encoding="utf-8")

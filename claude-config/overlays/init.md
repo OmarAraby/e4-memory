@@ -8,7 +8,7 @@ allowed-tools: Bash(python3:*), Bash(python:*), Bash(ls:*), Bash(test:*), Bash(c
 "$ARGUMENTS"
 <!-- /region:args -->
 <!-- region:detect-extra -->
-, `./.claude/hooks/`, hooks in `./.claude/settings.json`, `CLAUDE.md`
+, `./.claude/hooks/`, hooks in `./.claude/settings.json`, `CLAUDE.md` (and its `@AGENTS.md` import line)
 <!-- /region:detect-extra -->
 <!-- region:agent-steps -->
 ### 7a — Install the auto-load hooks (PER-PROJECT)
@@ -40,9 +40,19 @@ If `CLAUDE.md` does not exist at the project root, create it from the bundled te
 `claude-config/`) — a thin file that imports `@AGENTS.md` and adds the Claude Code specifics.
 If no template is found, write a `CLAUDE.md` whose first content line is `@AGENTS.md`.
 
-If `CLAUDE.md` already exists, do NOT clobber it — instead append a short `## Persistent Memory (.ai-memory)`
-section containing the line `@AGENTS.md` (plus one sentence pointing at `.ai-memory/` and the read order),
-only if such a section or import isn't already present.
+Wherever this step writes the `@AGENTS.md` line, also add (once) the sentence: "If the `AGENTS.md`
+contract is not in your context, read `AGENTS.md` at the repository root before doing anything else."
+— Claude Code skips the import when launched from a subdirectory until the external import is approved.
+
+If `CLAUDE.md` already exists, do NOT clobber it. Decide by the **import line**, not by the heading:
+- If it already contains a line that is exactly `@AGENTS.md` → leave it alone.
+- Else if it has a `## Persistent Memory (.ai-memory)` section (written by an older `/e4:init`) →
+  add the line `@AGENTS.md` at the end of that section; change nothing else.
+- Else → append a short `## Persistent Memory (.ai-memory)` section containing the line `@AGENTS.md`
+  (plus one sentence pointing at `.ai-memory/` and the read order).
+
+If the project's `AGENTS.md` existed before this run (user-owned), tell the user the import makes Claude
+Code follow its rules too.
 
 GitHub Copilot and Cursor need nothing more: both read `AGENTS.md` and `.agents/skills/` natively.
 <!-- /region:agent-steps -->

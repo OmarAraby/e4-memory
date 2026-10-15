@@ -38,6 +38,17 @@ class SyncAgentAdaptersTest(unittest.TestCase):
         self.assertTrue(out.startswith("---\ndescription: \"[e4] d\"\n# GENERATED"))
         self.assertNotIn("name: e4-resume", out)
 
+    def test_render_unclosedMarker_raises(self):
+        skill = "---\nname: e4-new-task\n---\nstamp: <!-- adapter:stamp -->run date\n"
+        with self.assertRaisesRegex(ValueError, "unbalanced"):
+            sync.render_command("new-task", skill, "---\ndescription: x\n---\n")
+
+    def test_render_overlayRegionTypo_raises(self):
+        skill = "---\nname: e4-new-task\n---\nstamp: <!-- adapter:stamp -->run date<!-- /adapter:stamp -->\n"
+        overlay = "---\ndescription: x\n---\n<!-- region:stamq -->\n!`date`\n<!-- /region:stamq -->\n"
+        with self.assertRaisesRegex(ValueError, "stamq"):
+            sync.render_command("new-task", skill, overlay)
+
     def test_generatedCommands_keepClaudeOnlyFeatures(self):
         cmds = ROOT / "claude-config" / ".claude" / "commands" / "e4"
         end = (cmds / "end-session.md").read_text(encoding="utf-8")

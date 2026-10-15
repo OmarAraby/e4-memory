@@ -233,6 +233,9 @@ CLAUDE_MD_IMPORT_FALLBACK = """# CLAUDE.md
 > Claude Code entry point. The operating contract is agent-neutral and lives in AGENTS.md (imported below).
 
 @AGENTS.md
+
+> If the AGENTS.md contract is not in your context (e.g. Claude Code was launched from a
+> subdirectory), read AGENTS.md at the repository root before doing anything else.
 """
 
 

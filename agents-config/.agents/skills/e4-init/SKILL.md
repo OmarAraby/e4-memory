@@ -44,9 +44,9 @@ If NOT found, create the structure yourself. Create `.ai-memory/` with these fil
 - `tasks/` — empty directory
 
 ## Step 3 — Install the shared e4 skills (portable, all agents)
-If `./.agents/skills/` has no `e4-*` folders, copy every `e4-*` folder from
-`<e4 vault>/agents-config/.agents/skills/` into `./.agents/skills/`. Never overwrite an existing
-folder. GitHub Copilot and Cursor load skills from `.agents/skills/` natively.
+For each `e4-*` folder in `<e4 vault>/agents-config/.agents/skills/`, copy it into `./.agents/skills/`
+**only if that folder does not exist there yet** — so a partial install is completed. Never overwrite
+or merge into an existing folder (it may be customised). GitHub Copilot and Cursor load skills from `.agents/skills/` natively.
 If no source is found, tell the user where the skills live and continue without failing.
 
 ## Step 4 — Ensure `.gitattributes` (prevent cross-branch memory conflicts)
@@ -61,7 +61,8 @@ append only the lines not already present** (don't duplicate or reorder existing
 ```
 *.sh text eol=lf
 .ai-memory/decisions.md   merge=union
-.ai-memory/session-log.md merge=union   # legacy pre-Tier-2 repos only
+# legacy pre-Tier-2 repos only (git does not allow comments at the end of a line)
+.ai-memory/session-log.md merge=union
 ```
 `merge=union` is a built-in git driver — no `.git/config` setup needed; the committed
 `.gitattributes` carries it to every clone. It covers only the append-only files; `progress.md`

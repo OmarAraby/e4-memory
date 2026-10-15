@@ -188,6 +188,9 @@ nothing is sent off-machine by e4 itself.
 - **Copilot and Cursor have no lifecycle automation in e4.** Memory loading relies on the model
   following `AGENTS.md`; there is no breadcrumb if the user skips wrap-up. Run
   `automation/bash/ai-memory.sh daily` / `archive` manually or via cron.
+- **Claude Code launched from a subdirectory skips the `@AGENTS.md` import** (external-import gate,
+  verified headless). Mitigated by a fallback sentence in `CLAUDE.md` telling Claude to read the file;
+  launching from the repo root avoids it.
 - **Copilot cloud agent cannot read `~/AI-Vault/`.** Anything it needs must be in the repo — put
   the key standards in `.ai-memory/onboarding.md` → *Project Conventions Snapshot*.
 - **Copilot/Cursor integrations are statically validated only** (spec checks, file layout). No

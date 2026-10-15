@@ -34,6 +34,27 @@ class PortableContractTest(unittest.TestCase):
         self.assertRegex(text, r"(?m)^@AGENTS\.md$")
         self.assertLess(len(text.splitlines()), 60, "CLAUDE.md should only hold Claude specifics")
 
+    def test_claudeTemplate_hasSubdirectoryFallback(self):
+        text = (TEMPLATE / "CLAUDE.md").read_text(encoding="utf-8")
+        self.assertIn("read `AGENTS.md` at the repository root", text)
+
+    def test_initSkill_gitattributesHasNoInlineComments(self):
+        # git rejects trailing comments: `x merge=union  # c` sets attributes "#", "c", ...
+        text = (SKILLS / "e4-init" / "SKILL.md").read_text(encoding="utf-8")
+        block = text.split("Ensure `./.gitattributes`", 1)[1].split("```", 2)[1]
+        for line in block.splitlines():
+            if not line.lstrip().startswith("#"):
+                self.assertNotIn("#", line, line)
+
+    def test_initSkill_copiesEachMissingSkillFolder(self):
+        text = (SKILLS / "e4-init" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("only if that folder does not exist there yet", text)
+
+    def test_claudeInit_addsImportByLineNotHeading(self):
+        text = (ROOT / "claude-config/.claude/commands/e4/init.md").read_text(encoding="utf-8")
+        self.assertIn("Decide by the **import line**, not by the heading", text)
+        self.assertIn("add the line `@AGENTS.md` at the end of that section", text)
+
     def test_copilotPointer_referencesAgentsMd(self):
         text = (ROOT / "copilot-config/.github/copilot-instructions.md").read_text(encoding="utf-8")
         self.assertIn("](../AGENTS.md)", text)
