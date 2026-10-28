@@ -27,6 +27,11 @@ REASON="$(printf '%s' "$INPUT" | sed -n 's/.*"reason"[: ]*"\([^"]*\)".*/\1/p')"
 
 [ ! -d "$MEM" ] && exit 0
 
+# e4_has_tldr FILE — true iff FILE carries a real TL;DR. e4_session.py drafts contain the marker
+# "e4:fill TL;DR" until /e4:end-session fills them, so an unfilled draft still counts as incomplete.
+# Keep this function identical in session_start.sh, session_end.sh and stop_reminder.sh.
+e4_has_tldr() { grep -qi "TL;DR" "$1" && ! grep -q "e4:fill TL;DR" "$1"; }
+
 # Tier-2: sessions are one file per session in sessions/. Decide whether a REAL session
 # was already logged today; if not, drop a breadcrumb FILE (never edit a shared file → no conflicts).
 BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
@@ -38,7 +43,7 @@ logged=false
 if [ -d "$MEM/sessions" ]; then
   for f in "$MEM/sessions/$TODAY"*.md; do
     [ -f "$f" ] || continue
-    grep -qi "TL;DR" "$f" && { logged=true; break; }
+    e4_has_tldr "$f" && { logged=true; break; }
   done
 fi
 # Legacy fallback: a same-day TL;DR entry in the old single session-log.md also counts.

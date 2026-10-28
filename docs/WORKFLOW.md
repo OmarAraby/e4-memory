@@ -98,11 +98,16 @@ D6. tasks/<task-id>.md — check acceptance criteria; set status: done,
 ```
 E1. WRITE A NEW FILE to .ai-memory/sessions/ named
     YYYY-MM-DD-HHMMSS-<branch>.md (never edit an existing one) with:
-    TL;DR · Did · Decisions · Files changed · State ·
-    Blockers · Next actions (numbered) · Checkpoint block.
-E2. Update progress.md (phase/health/milestones only) and set the
-    status: field in the relevant tasks/<id>.md, then regenerate
-    active-tasks.md — it is a generated view, never hand-edited.
+    TL;DR · Did · Decisions · State · Blockers · Next actions
+    (numbered) · Checkpoint block · Files changed · Commits.
+    /e4:end-session runs e4_session.py draft, which writes the git
+    facts (files, commits, branch, time) and leaves <!-- e4:fill -->
+    placeholders; the model fills only those. A draft whose TL;DR is
+    still a placeholder counts as incomplete to the hooks.
+E2. Set task status with e4_task.py set-status (updates the task's
+    status:, logs a checkpoint, regenerates active-tasks.md — a
+    generated view, never hand-edited). Edit progress.md only if
+    Phase, Health or a Milestone changed.
 E3. If tasks completed, optionally run archive_completed_tasks.
 E4. State the single first action for the next session.
 ```

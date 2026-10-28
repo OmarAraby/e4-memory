@@ -13,6 +13,11 @@ cat >/dev/null  # consume stdin
 
 MEM=".ai-memory"
 
+# e4_has_tldr FILE — true iff FILE carries a real TL;DR. e4_session.py drafts contain the marker
+# "e4:fill TL;DR" until /e4:end-session fills them, so an unfilled draft still counts as incomplete.
+# Keep this function identical in session_start.sh, session_end.sh and stop_reminder.sh.
+e4_has_tldr() { grep -qi "TL;DR" "$1" && ! grep -q "e4:fill TL;DR" "$1"; }
+
 # If there's no memory here, gently suggest initializing and exit.
 if [ ! -d "$MEM" ]; then
   echo "ℹ️ No .ai-memory/ found in this project. Run /e4:init to set up persistent memory."
@@ -63,7 +68,7 @@ if [ -n "$LATEST" ] && [ -f "$LATEST" ]; then
   echo "_$(basename "$LATEST")_"
   head -40 "$LATEST"
   echo
-  if ! grep -qi "TL;DR" "$LATEST"; then
+  if ! e4_has_tldr "$LATEST"; then
     echo "> ⚠️ The latest session file looks incomplete (no TL;DR). The previous session may have ended without /e4:end-session. Reconstruct what happened from git log and write a proper session file."
     echo
   fi

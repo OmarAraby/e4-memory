@@ -106,6 +106,9 @@ a shared file, which is what used to cause cross-branch merge conflicts) contain
 - **Next actions** (numbered, concrete — the first thing the next session should do)
 - **Checkpoint block** (last_command, working_file, test_status, uncommitted_changes)
 
+`/e4:end-session` drafts this file with `e4_session.py` (git facts + `<!-- e4:fill -->` placeholders);
+fill only the placeholders, and change task status with `e4_task.py set-status`.
+
 This is the most important habit: a good session file is what makes the *next* session instant.
 
 ---
