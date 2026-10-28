@@ -14,7 +14,7 @@ This command is a **top-up**: install only what is MISSING, never overwrite what
 independently for each piece — `.ai-memory/`, `./.claude/hooks/`, hooks in `./.claude/settings.json`,
 and `CLAUDE.md` — and decide per piece:
 - If `.ai-memory/` exists → SKIP Step 2 (do not touch existing memory), but CONTINUE to the remaining steps to add any missing hooks / CLAUDE.md section.
-- If ALL of (`.ai-memory/`, hooks, CLAUDE.md) already exist → report that the project is fully set up and stop.
+- If ALL of (`.ai-memory/`, every hook file listed in Step 2.5, CLAUDE.md) already exist → report that the project is fully set up and stop.
 - Reinitialize memory from scratch ONLY if the user explicitly asks.
 
 ## Step 2 — Scaffold the structure (only if `.ai-memory/` is missing)
@@ -53,14 +53,17 @@ Find the hook source (first match wins):
 - `~/AI-Vault/claude-config/.claude/`
 - `./scripts/.claude/`
 
-If a source is found AND `./.claude/hooks/` does not already exist:
-1. Copy `hooks/session_start.sh`, `hooks/session_end.sh`, `hooks/stop_reminder.sh` into `./.claude/hooks/`.
+If a source is found:
+1. Copy each of these into `./.claude/hooks/` **only if that file is missing** (never overwrite):
+   `session_start.sh`, `session_end.sh`, `stop_reminder.sh`, `e4.py` (the launcher the `/e4:*`
+   commands call), `context_nudge.py`, `read_guard.py`.
 2. Install the hooks config into `./.claude/settings.json`:
-   - If `settings.json` does NOT exist, copy the source `settings.json` (it contains the SessionStart/SessionEnd/Stop block).
-   - If it DOES exist, merge only the `hooks` key in — never overwrite other keys (e.g. `permissions`). Leave any `settings.local.json` untouched.
+   - If `settings.json` does NOT exist, copy the source `settings.json`.
+   - If it DOES exist, merge in only the hook events that are missing from its `hooks` key — never
+     overwrite other keys (e.g. `permissions`) or existing hook entries. Leave any `settings.local.json` untouched.
 3. Tell the user (Windows): the hooks run via **Git Bash** (`bash`) and call **`python3`** — both must be on PATH.
 
-If `./.claude/hooks/` already exists, skip (don't clobber). If no hook source is found, tell the user where the hooks live and continue without failing.
+If no hook source is found, tell the user where the hooks live and continue without failing.
 
 ## Step 2.6 — Ensure `.gitattributes` (prevent cross-branch memory conflicts)
 `decisions.md` is the one remaining **append-only** file — every session/branch adds an ADR at

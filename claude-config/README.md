@@ -8,6 +8,7 @@ Copy the `.claude/` directory here into your project root (or merge into an exis
 Contents:
 - `.claude/commands/e4/` → slash commands: /e4:init, /e4:end-session, /e4:resume, /e4:new-task
 - `.claude/hooks/`     → session_start.sh, session_end.sh, stop_reminder.sh,
+                         e4.py (launcher the /e4:* commands call to run the automation scripts),
                          guard-destructive-git.py (PreToolUse: blocks destructive git + secret commits)
 - `.claude/settings.json` → wires the hooks to SessionStart / SessionEnd / Stop
 

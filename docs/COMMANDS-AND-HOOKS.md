@@ -46,6 +46,23 @@ A command is just a markdown file. **The filename becomes the command name**, an
 - `@path/to/file` — injects that file's contents.
 - `` !`some command` `` — runs the shell command at invocation time and embeds its output (the command must be permitted by `allowed-tools`). This is how `/e4:end-session` pulls live `git status`/`git diff` before writing.
 
+### Commands that run scripts: `.claude/hooks/e4.py`
+
+The bookkeeping commands embed a script's output with a fenced `` ```! `` block. Three behaviours of
+Claude Code (checked on 2.1.312) shape how that block is written — keep them in mind when adding one:
+
+1. **`$ARGUMENTS` is pasted into the shell text before bash parses it.** `"$ARGUMENTS"` in a `!` line
+   lets quotes, backticks and `$(...)` in user input execute. e4 passes arguments through a quoted
+   heredoc instead (`<<'E4_ARGS'`), and the launcher substitutes that stdin text for a `-` argument.
+2. **Shell variables are rejected by the permission check** (`$AI_MEMORY_PYDIR/...`, `${X:-y}`), so
+   commands call the fixed project-relative launcher `.claude/hooks/e4.py`, which finds the scripts
+   (`$AI_MEMORY_PYDIR` → `$AI_VAULT/automation/python` → `~/AI-Vault/automation/python` → `./scripts`).
+3. **A non-zero exit aborts the whole command.** The launcher always exits 0 and prints failures as
+   `e4: error: ...` on stdout, which the command tells the model to relay.
+
+`/e4:init` installs `e4.py` with the other hook files. If a command fails with "Shell command failed",
+the project is missing `.claude/hooks/e4.py` — run `/e4:init` (it only adds missing files).
+
 > Note: older guides show a `/project:command` prefix. Current Claude Code uses the bare `/command` form (filename → name). Subdirectories namespace commands (e.g. `commands/mem/save.md` → `/mem:save`).
 
 ---
@@ -114,7 +131,7 @@ cp -r ai-memory-system/claude-config/.claude/commands/e4  ~/.claude/commands/e4
 #    - Type /e4:end-session to save (or get nudged by the Stop hook).
 ```
 
-**Windows:** either install Git Bash and keep the `bash .claude/hooks/*.sh` commands, or translate the hooks to PowerShell and change the `command` fields to `powershell -File .claude/hooks/SessionStart.ps1`. The slash commands themselves are OS-independent (they're markdown).
+**Windows:** either install Git Bash and keep the `bash .claude/hooks/*.sh` commands, or translate the hooks to PowerShell and change the `command` fields to `powershell -File .claude/hooks/SessionStart.ps1`. The `/e4:*` commands call `python3 .claude/hooks/e4.py`, so `python3` must be on PATH for them too.
 
 ---
 
@@ -126,7 +143,7 @@ cp -r ai-memory-system/claude-config/.claude/commands/e4  ~/.claude/commands/e4
 
 **`/e4:resume`** (bonus) — explicitly re-reads memory in order and posts a Resume Summary. Usually unnecessary because the SessionStart hook already injects this, but handy after a long tangent or a `/clear`.
 
-**`/e4:new-task <title>`** (bonus) — allocates a timestamp-based ID (`TASK-<YYYYMMDD-HHMMSS>-<slug>`, never a sequential counter, so parallel branches can't collide), writes the task file, and regenerates `active-tasks.md`.
+**`/e4:new-task <title> [-- detail]`** — `e4_task.py` allocates a timestamp-based ID (`TASK-<YYYYMMDD-HHMMSS>-<slug>`, never a sequential counter, so parallel branches can't collide), writes the task file, and regenerates `active-tasks.md` — no model tokens. The model only turns optional ` -- detail` into acceptance criteria. Status changes go through `e4_task.py set-status <id> <status> [--note]`, which also logs a dated checkpoint line.
 
 **`session_start.sh`** (hook) — every session, regenerates `active-tasks.md` from `tasks/*.md`, then prints current status, current task, and the newest `sessions/` file into Claude's context. If the last entry looks like an auto-breadcrumb (no TL;DR), it tells Claude the previous session wasn't saved and to reconstruct it from git — a self-healing loop.
 
