@@ -191,14 +191,42 @@ uncommitted_changes: yes
 ```
 """
 
-CLAUDE_MD_POINTER = """# CLAUDE.md
+# The slim per-project contract. Must stay byte-identical to project-template/CLAUDE.md
+# (smoke_test.py checks it); the long-form rules live in docs/WORKFLOW.md.
+CLAUDE_MD = """# CLAUDE.md
 
-> See the full operating instructions. At session start, read `.ai-memory/` in this order:
-> onboarding → context → architecture → active-tasks → progress → decisions → sessions/ (newest),
-> then post a Resume Summary. After significant work, update progress.md, active-tasks.md,
-> decisions.md (if needed), and write a new file in `.ai-memory/sessions/` for the session.
->
-> (Replace this stub with the full CLAUDE.md from the AI-Memory-System package for complete rules.)
+> Operating contract for Claude Code on this project (e4 persistent memory). Loaded every turn, so
+> it stays short. Full rules and rationale: `~/AI-Vault/docs/WORKFLOW.md` (Rule Sets A–E + Standing Rules).
+
+You are a senior engineer on this project. Memory lives in `.ai-memory/` (committed; never put
+secrets in it). Standards: `~/AI-Vault/User/coding-standards.md`; `.ai-memory/onboarding.md` wins on conflict.
+
+## A — Start
+- The SessionStart summary **is** the resume. Don't re-read memory to rebuild it; open a
+  `.ai-memory/` file only when the current task needs it. No summary, or a full resume asked → `/e4:resume`.
+- Last session only auto-recorded → mention it; backfill only if asked. No `.ai-memory/` → offer `/e4:init`.
+
+## B — Before changes
+- Restate the task. Check `decisions.md` before architectural changes; never silently contradict an
+  accepted ADR — propose a superseding one.
+- Verify against `architecture.md` and fix drift. Plan briefly before non-trivial edits. Missing access → ask.
+
+## C — During work
+- Small, reviewable diffs with tests. No debug prints or secrets. Update the task's Checkpoints at stopping points.
+
+## D — After work
+- Task status only via `e4_task.py set-status` (`active-tasks.md` is generated — never edit it); new tasks via `/e4:new-task`.
+- Update `decisions.md` (lasting decision), `architecture.md` (structure), `context.md` (scope),
+  `progress.md` (Phase / Health / Milestones only).
+
+## E — Session end
+- `/e4:end-session` drafts a new `sessions/YYYY-MM-DD-HHMMSS-<branch>.md`; fill only its placeholders.
+  Never edit an existing session file.
+- Context nudge, or switching tasks → `/e4:end-session`, then `/clear`.
+
+## Always
+- Confirm each step and surface errors; never claim silent success. No push, force-push or
+  destructive commands unless asked. Uncertain → two options with trade-offs.
 """
 
 
@@ -216,7 +244,7 @@ def main() -> int:
     ap.add_argument("--name", help="Project name (default: folder name)")
     ap.add_argument("--force", action="store_true", help="Overwrite existing files")
     ap.add_argument("--with-claude-md", action="store_true",
-                    help="Also create a stub CLAUDE.md at project root")
+                    help="Also create the slim e4 CLAUDE.md contract at project root")
     args = ap.parse_args()
 
     root = Path(args.project).expanduser().resolve()
@@ -240,7 +268,7 @@ def main() -> int:
     print(write(seed, SEED_SESSION.format(today=TODAY), args.force))
 
     if args.with_claude_md:
-        print(write(root / "CLAUDE.md", CLAUDE_MD_POINTER, args.force))
+        print(write(root / "CLAUDE.md", CLAUDE_MD, args.force))
 
     print("\nDone. Next: fill in context.md and architecture.md, then start working.")
     return 0

@@ -1,6 +1,6 @@
 # Claude Code Workflow & Explicit Rules
 
-This document specifies the exact, deterministic workflow Claude follows. The same rules live in condensed form inside `CLAUDE.md` (which Claude reads automatically). This is the expanded reference.
+This document specifies the exact, deterministic workflow Claude follows. The same rules live as one-liners in the per-project `CLAUDE.md` (loaded every turn, so it is kept to ~300 words). This is the expanded reference — anything `CLAUDE.md` points to lives here.
 
 ## The Memory Loop
 
@@ -85,8 +85,9 @@ C4. Never leave debug prints or secrets.
 ```
 D1. progress.md — move items between Completed/In-Progress/Up-Next;
     bump "Last updated"; adjust completion % and Health.
-D2. active-tasks.md — update current task status + checkpoint + next step;
-    promote the next task if current is done.
+D2. Task status — e4_task.py set-status <id> <status> [--note]; it logs
+    a checkpoint and regenerates active-tasks.md (never hand-edited).
+    Promote the next task (set it in-progress) if the current is done.
 D3. decisions.md — if a lasting decision was made, add an ADR entry.
 D4. architecture.md — if structure changed, reflect new reality.
 D5. context.md — if scope/goals changed, update.
@@ -114,6 +115,77 @@ E2. Set task status with e4_task.py set-status (updates the task's
 E3. If tasks completed, optionally run archive_completed_tasks.
 E4. State the single first action for the next session.
 ```
+
+## Standing Rules
+
+> `project-template/CLAUDE.md` keeps only one-line versions of the rule sets above (it is loaded
+> every turn, so it stays ~300 words). The detail it points to lives here.
+
+### Identity & sources of truth
+- Claude works as a senior engineer with persistent memory in `.ai-memory/`. Global preferences and
+  standards live in the vault (`~/AI-Vault/User/`); treat both as authoritative.
+- `.ai-memory/` is committed to git and must never contain secrets.
+
+### Coding rules
+- Follow `~/AI-Vault/User/coding-standards.md` (naming, error handling, testing, security);
+  project-specific overrides in `onboarding.md` win on conflict.
+- Incremental, reviewable diffs over large rewrites; every implementation paired with tests.
+- No secrets in code — use `.env`. Never log PII, tokens or passwords.
+- Keep files focused and under ~300 lines; split when larger. Remove debug statements before done.
+- Show file paths relative to the project root.
+
+### What counts as significant work
+Any change that alters behavior, structure, dependencies, or task status. Typo fixes and trivial
+edits don't need a full memory update (Rule Set D) but still belong in the session file if notable.
+Memory files are plain markdown — edit them directly and keep entries concise and factual, except
+the generated `active-tasks.md` and status changes, which go through `e4_task.py`.
+
+### Task tracking
+- One file per task: `.ai-memory/tasks/TASK-<YYYYMMDD-HHMMSS>-<slug>.md`, created with
+  `/e4:new-task` (`e4_task.py new`). IDs are timestamps, never sequential, so two branches can't
+  both allocate the same ID.
+- The task file's `status:` (`todo` / `in-progress` / `blocked` / `in-review` / `done`) is the source
+  of truth; `active-tasks.md` is a generated, gitignored view of it.
+- Update the task's Checkpoints as you go so any session can resume mid-task.
+- Done: check every acceptance criterion, `set-status done`, record a hit milestone in
+  `progress.md`; `archive_completed_tasks` can move the file to `~/AI-Vault/Archive/tasks/`.
+
+### Documentation rules
+- Public functions get docstrings/JSDoc; modules get a top-of-file purpose comment.
+- Update the project README when adding setup steps or env vars.
+- Significant architectural changes require an ADR in `decisions.md`.
+- Suggest a note in `~/AI-Vault/Knowledge/` when you learn something broadly reusable.
+- Use Obsidian-style `[[note]]` links inside memory files so the graph stays connected.
+
+### Automation (`~/AI-Vault/automation/` or the project's `scripts/`)
+- `init_project_memory` — scaffold `.ai-memory/`; `generate_status` — regenerate `active-tasks.md`
+  (also run by the SessionStart hook); `e4_task` — create tasks / change status; `e4_session` —
+  draft a session file; `generate_daily_summary` — roll session files into the daily log;
+  `archive_completed_tasks` — archive done tasks; `create_dashboard` — (re)generate dashboards
+  and the global project index.
+
+### Context hygiene
+- When the context nudge appears (≈80k tokens) or work moves to a different task: run
+  `/e4:end-session`, then `/clear`. The next session resumes from the injected summary instead of
+  re-sending the whole old conversation every turn.
+
+### Safety & honesty
+- Never run destructive commands without confirming; never `git push` or force-push unless asked.
+- If a task needs credentials/access you don't have, stop and say so.
+- Don't claim silent success — confirm each step and surface errors with context.
+- When uncertain, present two options with trade-offs; ask clarifying questions before designing systems.
+
+### Quick command reference
+| User says | Claude does |
+|-----------|-------------|
+| first message of a session | Use the injected summary (Rule Set A) |
+| "resume" / `/e4:resume [full]` | Resume Summary; reads files only if the summary is missing or `full` |
+| "checkpoint" / "wrap up" / `/e4:end-session` | Rule Set E via `e4_session.py draft` |
+| `/e4:init` | Scaffold `.ai-memory/`, hooks and `CLAUDE.md` (top-up only) |
+| `/e4:new-task <title> [-- detail]` | `e4_task.py new`; `active-tasks.md` regenerates |
+| "what's next?" | Current task + first next action from the injected summary |
+| "why did we…?" | Search `decisions.md` |
+| "status" | Summarize `progress.md` + the task counts |
 
 ## Worked Example
 

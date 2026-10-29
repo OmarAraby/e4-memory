@@ -108,7 +108,7 @@ Windows wrappers: `automation/powershell/Ai-Memory.ps1 {daily|dashboard|archive|
 | `User/` `Knowledge/` `Templates/` `DailyLogs/` `Projects/` `Archive/` | the global vault (opened in Obsidian) |
 | `automation/` | Python core + Bash/PowerShell wrappers |
 | `claude-config/.claude/` | the `e4` commands, hooks, and `settings.json` to install per-project |
-| `project-template/` | per-project `.ai-memory/` starter + full `CLAUDE.md` contract |
+| `project-template/` | per-project `.ai-memory/` starter + the slim (~300-word) `CLAUDE.md` contract; long-form rules in `docs/WORKFLOW.md` |
 | `docs/` | `WORKFLOW.md`, `OBSIDIAN-INTEGRATION.md`, `COMMANDS-AND-HOOKS.md` |
 
 ## Conventions
