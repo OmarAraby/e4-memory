@@ -37,7 +37,21 @@ A command is just a markdown file. **The filename becomes the command name**, an
 - `description:` — shown in the `/` picker and `/help`.
 - `argument-hint:` — placeholder text showing expected input.
 - `allowed-tools:` — restricts which tools the command may use, e.g. `Bash(git diff:*), Read, Edit`. Narrow = safer.
-- `model:` — pin a model (e.g. a cheap one for mechanical commands).
+- `model:` — the model for the rest of that turn: an alias (`sonnet`, `haiku`, `opus`), a full model ID, or `inherit`.
+
+**Which model each e4 command uses.** The bookkeeping now happens in scripts, so the commands pin
+cheaper models: `/e4:end-session` and `/e4:resume` → `sonnet` (they summarise), `/e4:new-task` and
+`/e4:init` → `haiku` (mechanical). The pin lasts only for that turn; your next prompt is back on the
+session model. To override:
+- per command: edit its `model:` line — another alias, a full ID such as `claude-opus-5-5`, or
+  `inherit` to always use the session model;
+- globally: `ANTHROPIC_DEFAULT_SONNET_MODEL` / `ANTHROPIC_DEFAULT_HAIKU_MODEL` remap what the aliases resolve to;
+- an organisation `availableModels` allowlist that excludes the pinned model makes Claude Code ignore
+  the pin and stay on the session model.
+
+> Verified on Claude Code 2.1.312: in headless `claude -p` runs the command is invoked through the
+> Skill tool and the pin is **not** applied (the session model answers). The docs say it applies in
+> interactive sessions; check with your transcript's `message.model` after running a command.
 - `disable-model-invocation:` — if `true`, only you can trigger it (Claude won't auto-run it).
 
 **Body placeholders:**

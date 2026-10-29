@@ -3,6 +3,7 @@
 description: "[e4] Scaffold .ai-memory/ and CLAUDE.md for this project"
 argument-hint: [project name (optional)]
 allowed-tools: Bash(python3:*), Bash(python:*), Bash(ls:*), Bash(test:*), Bash(cat:*), Bash(mkdir:*), Bash(cp:*), Read, Write, Edit
+model: haiku
 ---
 
 # /e4:init — Initialize project memory

@@ -3,6 +3,7 @@
 description: "[e4] Wrap up: update progress, tasks, sessions/, and write a session summary"
 argument-hint: [optional note about this session]
 allowed-tools: Bash(python3:*), Read, Edit
+model: sonnet
 ---
 
 # /e4:end-session — Persist this session to memory

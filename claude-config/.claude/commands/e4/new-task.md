@@ -3,6 +3,7 @@
 description: "[e4] Create a new task with a collision-free ID; active-tasks.md regenerates from it"
 argument-hint: <short task title> [-- extra detail]
 allowed-tools: Bash(python3:*), Read, Edit
+model: haiku
 ---
 
 # /e4:new-task — Create a tracked task
