@@ -163,6 +163,8 @@ cp -r ai-memory-system/claude-config/.claude/commands/e4  ~/.claude/commands/e4
 
 **`session_end.sh`** (hook) — if you forgot `/e4:end-session`, writes a dated breadcrumb file to `sessions/` so the session is never *completely* unrecorded, then (backgrounded) archives completed tasks and regenerates the daily summary.
 
+**`context_nudge.py`** (hook, `UserPromptSubmit`) — long sessions that drift across tasks were most of the token bill, because every turn re-sends all earlier context. On each prompt this reads the **tail** of the transcript (the latest main-thread assistant `usage`: input + cache-read + cache-creation tokens; falls back to file size ÷ 4) and, once per 80k-token band (`E4_CONTEXT_NUDGE_TOKENS` to change), adds one line suggesting `/e4:end-session` then `/clear`. If the prompt names a `TASK-YYYYMMDD-HHMMSS` that isn't the in-progress task, it adds one line suggesting a checkpoint + `/clear` before switching (once per task per session). State lives in the OS temp dir keyed by session id. It never blocks a prompt: any error exits 0 silently. `UserPromptSubmit` takes no matcher, so it runs on every prompt (~0.1 s).
+
 **`stop_reminder.sh`** (hook, optional) — once per session, if there are uncommitted changes and no session file logged today, injects a one-line nudge to run `/e4:end-session`. Soft by default; a commented block shows how to make it hard-block instead (subject to the Stop-hook block cap that prevents loops).
 
 ---
