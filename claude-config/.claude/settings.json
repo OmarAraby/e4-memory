@@ -1,6 +1,9 @@
 {
-  "$comment": "Drop this in .claude/settings.json (project) or ~/.claude/settings.json (global). Paths assume hooks live in .claude/hooks/. Adjust if you use a different location. On Windows, point commands at the .ps1 versions or run them via 'bash'/'python'.",
+  "$comment": "Drop this in .claude/settings.json (project) or ~/.claude/settings.json (global). Paths assume hooks live in .claude/hooks/. Adjust if you use a different location. On Windows, point commands at the .ps1 versions or run them via 'bash'/'python'. PreToolUse entries are one line each: to enable the destructive-git guard, add this line to the PreToolUse array: { \"matcher\": \"Bash\", \"hooks\": [ { \"type\": \"command\", \"command\": \"python3 .claude/hooks/guard-destructive-git.py\", \"timeout\": 10 } ] }",
   "hooks": {
+    "PreToolUse": [
+      { "matcher": "Read|Grep|Glob", "hooks": [ { "type": "command", "command": "python3 .claude/hooks/read_guard.py", "timeout": 10 } ] }
+    ],
     "SessionStart": [
       {
         "matcher": "startup|resume|clear",

@@ -91,6 +91,11 @@ The events this system uses:
 - **`SessionEnd`** — fires when the session closes (`clear|resume|logout|prompt_input_exit`). Receives `session_id`, `reason`, `transcript_path`. Runs a script only — *cannot* prompt the model. Used as a mechanical safety net.
 - **`Stop`** — fires when Claude finishes a response (once per turn). Can inject `additionalContext` (a nudge) or even block to force continuation. Used for the optional gentle reminder.
 
+- **`UserPromptSubmit`** — fires on every prompt (no matcher). Input adds `prompt`; plain stdout or `hookSpecificOutput.additionalContext` is added to context; exit 2 would block the prompt (e4 never does). Used by `context_nudge.py`.
+- **`PreToolUse`** — fires before a tool call; matcher is the tool name (`Read|Grep|Glob`). Input has `tool_name` and `tool_input` (Read: `file_path`, `offset`, `limit`; Grep/Glob: `pattern`, `path`). Printing `{"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": "..."}}` blocks the call and shows Claude the reason. Used by `read_guard.py`.
+
+Hook output added to context is capped at 10,000 characters; `timeout` is in seconds.
+
 Config shape:
 ```json
 {
@@ -164,6 +169,10 @@ cp -r ai-memory-system/claude-config/.claude/commands/e4  ~/.claude/commands/e4
 **`session_end.sh`** (hook) — if you forgot `/e4:end-session`, writes a dated breadcrumb file to `sessions/` so the session is never *completely* unrecorded, then (backgrounded) archives completed tasks and regenerates the daily summary.
 
 **`context_nudge.py`** (hook, `UserPromptSubmit`) — long sessions that drift across tasks were most of the token bill, because every turn re-sends all earlier context. On each prompt this reads the **tail** of the transcript (the latest main-thread assistant `usage`: input + cache-read + cache-creation tokens; falls back to file size ÷ 4) and, once per 80k-token band (`E4_CONTEXT_NUDGE_TOKENS` to change), adds one line suggesting `/e4:end-session` then `/clear`. If the prompt names a `TASK-YYYYMMDD-HHMMSS` that isn't the in-progress task, it adds one line suggesting a checkpoint + `/clear` before switching (once per task per session). State lives in the OS temp dir keyed by session id. It never blocks a prompt: any error exits 0 silently. `UserPromptSubmit` takes no matcher, so it runs on every prompt (~0.1 s).
+
+**`read_guard.py`** (hook, `PreToolUse` on `Read|Grep|Glob`) — denies reads that burn context for nothing, with a reason that tells the model how to proceed: lockfiles (Grep them instead), minified files, `node_modules/`, `dist/`, `build/`, `bin/`, `obj/`, `.git/`, the vault `Archive/`, `.ai-memory/sessions/` files other than the newest, and any file over 200 KB unless `offset`/`limit` is given. Grep/Glob are denied only when aimed at one of those directories. Patterns are an editable list at the top of the script; per project, `.claude/e4-read-guard.txt` adds globs (one per line) or re-allows with `!glob` (e.g. `!bin/**`). `E4_READ_GUARD=off` disables it; any error allows the read.
+
+The `PreToolUse` block in `settings.json` keeps one entry per line, so enabling `guard-destructive-git.py` later is a one-line addition (the exact line is in the file's `$comment`).
 
 **`stop_reminder.sh`** (hook, optional) — once per session, if there are uncommitted changes and no session file logged today, injects a one-line nudge to run `/e4:end-session`. Soft by default; a commented block shows how to make it hard-block instead (subject to the Stop-hook block cap that prevents loops).
 
