@@ -67,10 +67,10 @@ branch: $BRANCH
 ## Session — $TODAY (auto-recorded by SessionEnd hook)
 **Time**: ended $NOW
 **Branch**: $BRANCH
-**TL;DR**: ⚠️ Session ended via '$REASON' without /e4:end-session. This is an auto-breadcrumb — next session should reconstruct details from git log and write a proper session file.
+**TL;DR**: ⚠️ Session ended via '$REASON' without /e4:end-session. Auto-recorded breadcrumb — no summary was written.
 **Uncommitted files at end**: $DIRTY
 **Next actions**:
-1. Review git log/diff for this session and backfill a proper session file.
+1. If the user asks, backfill this session from git history with /e4:end-session.
 EOF
 fi
 

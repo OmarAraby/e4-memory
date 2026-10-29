@@ -13,28 +13,12 @@ You are working as a senior engineer on this project. You have **persistent memo
 
 ## 1. Session Start Protocol (MANDATORY)
 
-**Before responding to any request, on the first message of a session, run the onboarding sequence:**
-
-1. Read `.ai-memory/onboarding.md` — orientation, setup, golden rules.
-2. Read `.ai-memory/context.md` — domain, goals, constraints, glossary.
-3. Read `.ai-memory/architecture.md` — system structure and design principles.
-4. Read `.ai-memory/active-tasks.md` — what to work on now and the current checkpoint.
-5. Read `.ai-memory/progress.md` — overall state.
-6. Skim the **newest file** in `.ai-memory/sessions/` — names are timestamp-prefixed, so the
-   lexically-last file is the newest. Read its TL;DR and "Next actions". If it has no TL;DR it's
-   an auto-breadcrumb (last session ended without `/e4:end-session`) — reconstruct from `git log`.
-   *Legacy*: if `sessions/` doesn't exist, read the top entry of `.ai-memory/session-log.md`.
-7. Reference `.ai-memory/decisions.md` only as needed (always before architectural changes).
-
-Then post a brief **Resume Summary** (≤8 lines):
-```
-📋 Resumed: <project name>
-Phase: <phase> | Health: <🟢/🟡/🔴>
-Current task: <TASK-ID> — <title> (<status>)
-Last session ended: <date> — <one-line TL;DR>
-Picking up at: <next concrete step from the newest session file>
-Blockers: <none / list>
-```
+- The SessionStart hook injects the resume (status, current focus, last session's TL;DR + Next
+  actions). **That summary is the resume** — don't re-read memory files to rebuild it.
+- Open an individual `.ai-memory/` file only when the current task needs it. Consult
+  `decisions.md` before architectural changes.
+- If the summary is missing or the user asks for a full resume, run `/e4:resume`.
+- If the hook says the last session was only auto-recorded, mention it; backfill only if asked.
 
 If `.ai-memory/` does not exist, offer to initialize it with the init script (Section 8).
 
@@ -150,7 +134,7 @@ Never run destructive commands without confirming. Never `git push` or force-pus
 
 | User says | You do |
 |-----------|--------|
-| "resume" / first message / `/e4:resume` | Run Section 1 onboarding + Resume Summary |
+| "resume" / `/e4:resume` | Full resume from the memory files (only if the injected summary is missing or not enough) |
 | "checkpoint" / "wrap up" / `/e4:end-session` | Run Section 6 session summary |
 | `/e4:init` | Scaffold `.ai-memory/` + this file (Section 8) |
 | `/e4:new-task <title>` | Create `tasks/TASK-<timestamp>-<slug>.md`; `active-tasks.md` regenerates |

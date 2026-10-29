@@ -7,7 +7,7 @@ This document specifies the exact, deterministic workflow Claude follows. The sa
 ```
         ┌─────────────────────────────────────────────┐
         │                SESSION START                 │
-        │  Read memory → post Resume Summary            │
+        │  Hook injects the resume · read on demand    │
         └───────────────────┬─────────────────────────┘
                             ▼
         ┌─────────────────────────────────────────────┐
@@ -34,22 +34,25 @@ This document specifies the exact, deterministic workflow Claude follows. The sa
 
 ## Rule Set A — Entering a Project
 
-> Triggered on the first message of any session, or when the user says "resume".
+> Applies at the start of every session (and after /clear).
 
 ```
-A1. Read .ai-memory/onboarding.md in full.
-A2. Read .ai-memory/context.md.
-A3. Read .ai-memory/architecture.md.
-A4. Read .ai-memory/active-tasks.md.
-A5. Read .ai-memory/progress.md.
-A6. Read the NEWEST file in .ai-memory/sessions/ (timestamp-prefixed
-    names sort chronologically → the lexically-last file is newest).
-    Legacy fallback: if sessions/ is absent, read the TOP entry of
-    .ai-memory/session-log.md (pre-Tier-2 repos).
-A7. Open .ai-memory/decisions.md index (read full ADRs on demand).
-A8. Post a Resume Summary (≤8 lines): project, phase, health,
-    current task, last TL;DR, "picking up at", blockers.
-A9. If .ai-memory/ is absent → offer to run init_project_memory.
+A1. The SessionStart hook injects the resume: status, current focus,
+    and the last saved session's TL;DR + Next actions. That summary
+    IS the resume — do not re-read memory files to rebuild it, and
+    no separate Resume Summary is needed unless the user asks.
+A2. Open an individual .ai-memory/ file only when the current task
+    needs it (architecture.md before structural work, the task's
+    tasks/<id>.md before working on it). decisions.md is consulted
+    before architectural changes (B2).
+A3. If the injected summary is missing (hooks not installed) or the
+    user asks for a full resume, run /e4:resume. It reads, in order:
+    onboarding → context → architecture → active-tasks → progress →
+    the NEWEST sessions/ file (lexically-last; legacy: top entry of
+    session-log.md) → the decisions.md index.
+A4. If the hook says the latest session was only auto-recorded,
+    mention it once; backfill it only if the user asks.
+A5. If .ai-memory/ is absent → offer /e4:init.
 ```
 
 ## Rule Set B — Before Making Changes
@@ -116,20 +119,16 @@ E4. State the single first action for the next session.
 
 **User (new session)**: "let's keep going"
 
-**Claude** runs Rule Set A, then:
-```
-📋 Resumed: MyApp
-Phase: MVP | Health: 🟢
-Current task: TASK-20260609-142233-health-endpoint — Health-check endpoint (in-progress)
-Last session ended: 2026-06-09 — Added route skeleton, DB ping stubbed.
-Picking up at: wire version from package metadata + add tests.
-Blockers: none
-```
+**Claude** already has the injected resume (Rule Set A) — current task
+`TASK-20260609-142233-health-endpoint`, last TL;DR "route skeleton added, DB ping stubbed", next
+action "wire version from package metadata + add tests" — so it picks that up directly, opening
+`tasks/TASK-20260609-142233-health-endpoint.md` because it is about to work on it.
 Then applies Rule Set B (confirms task, checks decisions), does the work (Rule Set C), and on completion runs Rule Sets D and E — updating `progress.md`, marking that task `done`, and writing a new `sessions/` file whose "Next actions" point to the next task.
 
 ## Why This Works for Long-Running Projects
 
-- **Determinism**: the read order and update list are fixed, so behavior is consistent across sessions and models.
+- **Determinism**: the injected resume and the update list are fixed, so behavior is consistent across sessions and models.
+- **Cheap by default**: the resume costs a few hundred tokens; scripts do the bookkeeping, hooks the guarantees, and the model only the judgment.
 - **Crash resilience**: one immutable file per session + per-task checkpoints mean the worst case is losing minutes, not context. A `SessionEnd` hook drops a breadcrumb file even if `/e4:end-session` is skipped.
 - **Conflict-free in parallel**: memory is never a shared file that two branches both append to — sessions are one file each, task IDs are timestamps, and `active-tasks.md` is generated and gitignored.
 - **Low overhead**: only "significant work" triggers full updates; writing a session file is the one always-on habit.

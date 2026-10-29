@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # session_start.sh — Claude Code SessionStart hook.
 # Whatever this script prints to STDOUT is injected into Claude's context at the
-# start of every session/resume. This is the "doesn't rely on Claude remembering"
-# mechanism: memory is loaded automatically, every time.
+# start of every session/resume/clear. That output IS the resume: status, current focus,
+# and the last saved session's TL;DR + Next actions. Keep it small (target < ~300 tokens);
+# the model opens individual memory files only when the current task needs them.
 #
 # Input: JSON on stdin (session_id, cwd, source, ...). We don't need it, but read it
 # so the pipe doesn't break.
@@ -18,71 +19,90 @@ MEM=".ai-memory"
 # Keep this function identical in session_start.sh, session_end.sh and stop_reminder.sh.
 e4_has_tldr() { grep -qi "TL;DR" "$1" && ! grep -q "e4:fill TL;DR" "$1"; }
 
+# e4_section FILE LABEL MAX — print a session file's LABEL entry ("**TL;DR**: ...", "**Next actions**:")
+# plus up to MAX body lines; stops at a blank line, the next **Field** or a heading. FILE may be "-".
+e4_section() {
+  awk -v label="$2" -v max="$3" '
+    !on && index($0, label) {
+      on = 1; rest = substr($0, index($0, label) + length(label)); gsub(/[*:#[:space:]]/, "", rest)
+      body = (rest != ""); print; next
+    }
+    on {
+      if ($0 ~ /^[[:space:]]*$/) { if (body) exit; next }
+      if ($0 ~ /^(\*\*|#)/) exit
+      body = 1; if (++n > max) exit; print
+    }' "$1"
+}
+
 # If there's no memory here, gently suggest initializing and exit.
 if [ ! -d "$MEM" ]; then
   echo "ℹ️ No .ai-memory/ found in this project. Run /e4:init to set up persistent memory."
   exit 0
 fi
 
-# Tier-3: active-tasks.md is a GENERATED view of tasks/* (gitignored). Refresh it from the task
+# active-tasks.md is a GENERATED view of tasks/* (gitignored). Refresh it from the task
 # files before reading (best-effort, fast). No-op if the generator isn't installed.
 PYDIR="${AI_MEMORY_PYDIR:-$HOME/AI-Vault/automation/python}"
 [ -f "$PYDIR/generate_status.py" ] && python3 "$PYDIR/generate_status.py" --project "$PWD" >/dev/null 2>&1
 
-echo "## 🧠 Project Memory (auto-loaded) — e4"
-echo "*forged by Omar Araby & contributors*"
-echo
-echo "Read order if you need detail: onboarding → context → architecture → active-tasks → progress → decisions → sessions/ (newest file)."
+echo "## 🧠 Project memory — e4 (forged by Omar Araby & contributors)"
+echo "This is the resume. Open .ai-memory/ files only when the current task needs them; check decisions.md before architectural changes."
 echo
 
-# --- Current state from progress.md ---
-if [ -f "$MEM/progress.md" ]; then
+# --- Status (≤4 lines): Phase + Health from progress.md (bold or plain labels), task counts from the view ---
+STATUS="$( { [ -f "$MEM/progress.md" ] && grep -E -i '^[[:space:]]*([-*][[:space:]]*)?(\*\*)?(Phase|Health)(\*\*)?[[:space:]]*:' "$MEM/progress.md" | head -2
+            [ -f "$MEM/active-tasks.md" ] && grep -E '^\*\*Tasks:\*\*' "$MEM/active-tasks.md" | head -1; } \
+          | sed -E 's/\*\*//g; s/^[[:space:]]*[-*][[:space:]]*//; s/^/- /')"
+if [ -n "$STATUS" ]; then
   echo "### Status"
-  grep -E -i "Phase:|completion|Last updated:|Health:" "$MEM/progress.md" | head -4 \
-    | sed -E 's/\*\*//g; s/^[[:space:]]*[-*][[:space:]]*//; s/^/- /'
+  echo "$STATUS"
   echo
 fi
 
-# --- Current task from active-tasks.md ---
+# --- Current focus (≤5 lines): the generated "Current Task" section, minus the derivable file links ---
 if [ -f "$MEM/active-tasks.md" ]; then
-  echo "### Current focus"
-  # print the Current Task section up to the next header (tolerant of header style:
-  # "## 🎯 Current Task" or "## Current task"; stops at the next "## " header)
-  awk '/^##[[:space:]].*[Cc]urrent/{flag=1; next} /^##[[:space:]]/{flag=0} flag' "$MEM/active-tasks.md" | sed '/^[[:space:]]*$/d' | head -8
-  echo
+  FOCUS="$(awk '/^##[[:space:]].*[Cc]urrent/{flag=1; next} /^##[[:space:]]/{flag=0} flag' "$MEM/active-tasks.md" \
+    | sed '/^[[:space:]]*$/d' | sed -E 's/ → `tasks\/[^`]*`//; s/ _\(priority: [a-z]+\)_//; s/\*\*//g' | head -5)"
+  if [ -n "$FOCUS" ]; then
+    echo "### Current focus"
+    echo "$FOCUS"
+    echo
+  fi
 fi
 
-# --- Most recent session (the resume anchor) ---
-# Tier-2: sessions live as one file per session in sessions/ (timestamp-prefixed names
-# sort chronologically, so the newest is the lexically-last). Falls back to the legacy
-# single session-log.md for repos not yet migrated.
-LATEST=""
+# --- Last session: TL;DR + Next actions only ---
+# One file per session in sessions/; names are timestamp-prefixed, so the lexically-last is newest.
+# Match ONLY the naming contract (YYYY-...-*.md): a bare *.md glob would pick sessions/README.md.
 if [ -d "$MEM/sessions" ]; then
-  # Match ONLY the session naming contract (YYYY-...-*.md). A bare *.md glob would also pick up
-  # sessions/README.md, which sorts AFTER any date-prefixed name in LC_ALL=C and would be
-  # mistaken for the newest session.
-  LATEST="$(ls -1 "$MEM/sessions"/[0-9][0-9][0-9][0-9]-*.md 2>/dev/null | LC_ALL=C sort | tail -1)"
-fi
-if [ -n "$LATEST" ] && [ -f "$LATEST" ]; then
-  echo "### Last session"
-  echo "_$(basename "$LATEST")_"
-  head -40 "$LATEST"
-  echo
-  if ! e4_has_tldr "$LATEST"; then
-    echo "> ⚠️ The latest session file looks incomplete (no TL;DR). The previous session may have ended without /e4:end-session. Reconstruct what happened from git log and write a proper session file."
+  FILES="$(ls -1 "$MEM/sessions"/[0-9][0-9][0-9][0-9]-*.md 2>/dev/null | LC_ALL=C sort -r)"
+  LATEST="$(printf '%s\n' "$FILES" | head -1)"
+  SAVED=""
+  for f in $FILES; do
+    case "$f" in *-auto.md) continue ;; esac   # SessionEnd breadcrumb, not a real summary
+    e4_has_tldr "$f" && { SAVED="$f"; break; }
+  done
+  if [ -n "$SAVED" ]; then
+    echo "### Last session — $(basename "$SAVED" .md)"
+    e4_section "$SAVED" "TL;DR" 3
+    e4_section "$SAVED" "Next actions" 5
+    echo
+  fi
+  if [ -n "$LATEST" ] && [ "$LATEST" != "$SAVED" ]; then
+    echo "> ⚠️ The most recent session ($(basename "$LATEST" .md)) ended without /e4:end-session and was only auto-recorded. If the user wants it backfilled, they will ask — don't reconstruct it unprompted."
     echo
   fi
 elif [ -f "$MEM/session-log.md" ]; then
-  # Legacy single-file fallback (pre-Tier-2 repos)
-  echo "### Last session"
-  awk '/^## Session/{c++} c==1{print} c==2{exit}' "$MEM/session-log.md" | head -30
-  echo
+  # Legacy single-file fallback (pre-Tier-2 repos): newest entry is the first "## Session" block.
   LAST_BLOCK="$(awk '/^## Session/{c++} c==1{print} c==2{exit}' "$MEM/session-log.md")"
-  if ! echo "$LAST_BLOCK" | grep -qi "TL;DR"; then
-    echo "> ⚠️ The last session-log entry looks incomplete (no TL;DR). The previous session may have ended without /e4:end-session. Reconstruct what happened from git log and offer to write a proper entry."
+  echo "### Last session (legacy session-log.md)"
+  printf '%s\n' "$LAST_BLOCK" | e4_section - "TL;DR" 3
+  printf '%s\n' "$LAST_BLOCK" | e4_section - "Next actions" 5
+  echo
+  if ! printf '%s\n' "$LAST_BLOCK" | grep -qi "TL;DR"; then
+    echo "> ⚠️ The last session-log entry has no TL;DR (likely ended without /e4:end-session). If the user wants it backfilled, they will ask."
     echo
   fi
 fi
 
-echo "When this session involves real work, run /e4:end-session before finishing so the next session can resume."
+echo "Before finishing real work: /e4:end-session."
 exit 0
