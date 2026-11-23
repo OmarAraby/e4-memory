@@ -10,7 +10,9 @@ shared file, which is why parallel branches never produce merge conflicts on mem
 - **Filename**: `YYYY-MM-DD-HHMMSS-<branch>.md` (branch sanitized — every non-alphanumeric
   character becomes `-`; no git → `nogit`). Timestamp-first means the files sort chronologically,
   so **the lexically-last file is the newest session**.
-- **Written by**: `/e4:end-session` (the real, intelligent entry).
+- **Written by**: `/e4:end-session` — `e4_session.py draft` writes the git facts and
+  `<!-- e4:fill -->` placeholders, then the model fills the judgment sections. A draft whose
+  TL;DR is still the placeholder counts as incomplete.
 - **Also written by**: the `SessionEnd` hook, which drops an `*-auto.md` breadcrumb if a session
   ends without `/e4:end-session`. A breadcrumb is a placeholder — the next session should
   reconstruct the details from `git log` and write a proper file.

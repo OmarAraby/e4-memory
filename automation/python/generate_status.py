@@ -57,12 +57,13 @@ def parse_task(path: Path) -> dict:
     }
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--project", default=".")
-    args = ap.parse_args()
+def regenerate(project: str | Path) -> str:
+    """Rewrite <project>/.ai-memory/active-tasks.md from tasks/*.md; return a one-line summary.
 
-    mem = Path(args.project).expanduser().resolve() / ".ai-memory"
+    Importable so e4_task.py / e4_session.py reuse this exact view logic instead of copying it.
+    Unrecognised-status warnings still go to stderr; the summary is returned, not printed.
+    """
+    mem = Path(project).expanduser().resolve() / ".ai-memory"
     tasks_dir = mem / "tasks"
     tasks = [parse_task(f) for f in sorted(tasks_dir.glob("*.md"))] if tasks_dir.is_dir() else []
 
@@ -112,7 +113,14 @@ def main() -> int:
     ]
     mem.mkdir(parents=True, exist_ok=True)
     (mem / "active-tasks.md").write_text("\n".join(parts), encoding="utf-8")
-    print(f"Regenerated {mem / 'active-tasks.md'} - {total} task(s), {done} done ({pct}%).")
+    return f"Regenerated {mem / 'active-tasks.md'} - {total} task(s), {done} done ({pct}%)."
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--project", default=".")
+    args = ap.parse_args()
+    print(regenerate(args.project))
     return 0
 
 

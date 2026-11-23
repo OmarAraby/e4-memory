@@ -98,6 +98,9 @@ Dependency-free Python (stdlib only), with Bash + PowerShell wrappers.
 | Archive done tasks | `python automation/python/archive_completed_tasks.py --project <repo> --vault $AI_VAULT --infer` |
 | Project dashboard | `python automation/python/create_dashboard.py --vault $AI_VAULT --project <repo>` |
 | Rebuild master index | `python automation/python/create_dashboard.py --vault $AI_VAULT --rebuild-index --projects-root $AI_PROJECTS_ROOT` |
+| New task / change status | `python automation/python/e4_task.py new "Title"` · `... set-status <TASK-id> in-progress --note "..."` |
+| Session-file draft | `python automation/python/e4_session.py draft --note "..."` |
+| Smoke test (temp dir, touches nothing real) | `python automation/python/smoke_test.py` |
 
 Windows wrappers: `automation/powershell/Ai-Memory.ps1 {daily|dashboard|archive|sync}`.
 
@@ -108,7 +111,7 @@ Windows wrappers: `automation/powershell/Ai-Memory.ps1 {daily|dashboard|archive|
 | `User/` `Knowledge/` `Templates/` `DailyLogs/` `Projects/` `Archive/` | the global vault (opened in Obsidian) |
 | `automation/` | Python core + Bash/PowerShell wrappers |
 | `claude-config/.claude/` | the `e4` commands, hooks, and `settings.json` to install per-project |
-| `project-template/` | per-project `.ai-memory/` starter + full `CLAUDE.md` contract |
+| `project-template/` | per-project `.ai-memory/` starter + the slim (~300-word) `CLAUDE.md` contract; long-form rules in `docs/WORKFLOW.md` |
 | `docs/` | `WORKFLOW.md`, `OBSIDIAN-INTEGRATION.md`, `COMMANDS-AND-HOOKS.md` |
 
 ## Conventions

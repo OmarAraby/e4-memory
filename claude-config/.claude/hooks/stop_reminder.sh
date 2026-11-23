@@ -24,6 +24,11 @@ MARKER="${TMPDIR:-/tmp}/.claude_stop_${_KEY}_${TODAY}"
 [ ! -d "$MEM" ] && exit 0
 [ -f "$MARKER" ] && exit 0
 
+# e4_has_tldr FILE — true iff FILE carries a real TL;DR. e4_session.py drafts contain the marker
+# "e4:fill TL;DR" until /e4:end-session fills them, so an unfilled draft still counts as incomplete.
+# Keep this function identical in session_start.sh, session_end.sh and stop_reminder.sh.
+e4_has_tldr() { grep -qi "TL;DR" "$1" && ! grep -q "e4:fill TL;DR" "$1"; }
+
 # Did meaningful work happen? Use uncommitted changes as a cheap proxy.
 CHANGES="$(git status --short 2>/dev/null | wc -l | tr -d ' ')"
 [ "${CHANGES:-0}" -eq 0 ] && exit 0
@@ -36,7 +41,7 @@ CHANGES="$(git status --short 2>/dev/null | wc -l | tr -d ' ')"
 if [ -d "$MEM/sessions" ]; then
   for f in "$MEM/sessions/$TODAY"*.md; do
     [ -f "$f" ] || continue
-    grep -qi "TL;DR" "$f" && exit 0   # already logged today
+    e4_has_tldr "$f" && exit 0   # already logged today
   done
 fi
 # Legacy fallback (pre-Tier-2 repos): a same-day TL;DR entry in the old single session-log.md counts.
