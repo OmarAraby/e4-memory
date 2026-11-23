@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `D:\AI-Vault` is the **global Obsidian vault** for the **AI Memory System for Claude Code** — a persistent-memory system that gives Claude long-term memory across projects, sessions, and restarts. The full distribution currently ships as zip bundles in the root (`files.zip`, `files (1).zip`); `files (1).zip` is the newer, more complete bundle (adds `claude-config/` slash commands + hooks and `COMMANDS-AND-HOOKS.md`). Unpacking `vault-structure/` from the bundle into this directory is what turns it into the live vault.
 
-This is a **docs + templates + automation-scripts** project, not a compiled application. There is no build step. The Python automation is stdlib-only (no dependencies, no package manifest), the Bash/PowerShell scripts are thin wrappers over it, and there is no test suite — do not invent build/lint/test commands.
+This is a **docs + templates + automation-scripts** project, not a compiled application. There is no build step. The Python automation is stdlib-only (no dependencies, no package manifest), the Bash/PowerShell scripts are thin wrappers over it, and the only tests are stdlib scripts next to the code (`python automation/python/smoke_test.py`, `python automation/python/test_e4_doctor.py`) — do not invent other build/lint/test commands.
 
 ## The two-layer memory model (the core architecture)
 
@@ -50,6 +50,9 @@ python3 archive_completed_tasks.py --project <project-root> --vault ~/AI-Vault [
 # Generate a project dashboard and/or rebuild the global Projects index
 python3 create_dashboard.py --vault ~/AI-Vault --project <project-root>
 python3 create_dashboard.py --vault ~/AI-Vault --rebuild-index --projects-root ~/code
+
+# Health-check the install: hook wiring/drift, settings JSON, CRLF hooks, LSP binaries (read-only)
+python3 e4_doctor.py [--project <project-root>] [--fix | --force]
 ```
 
 Wrappers delegate to the Python tools. **Windows (this environment) — use PowerShell:**
@@ -60,6 +63,7 @@ Wrappers delegate to the Python tools. **Windows (this environment) — use Powe
 .\automation\powershell\Ai-Memory.ps1 dashboard <project-root>
 .\automation\powershell\Ai-Memory.ps1 archive <project-root>
 .\automation\powershell\Ai-Memory.ps1 sync
+.\automation\powershell\Ai-Memory.ps1 doctor [<project-root>] [--fix]
 ```
 
 The wrappers read `AI_VAULT`, `AI_MEMORY_PYDIR`, and `AI_PROJECTS_ROOT` from the environment; set these or edit the script defaults before running.

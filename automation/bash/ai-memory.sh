@@ -7,6 +7,7 @@
 #   ./ai-memory.sh dashboard PROJ # rebuild a project dashboard + index
 #   ./ai-memory.sh archive PROJ   # archive completed tasks for a project
 #   ./ai-memory.sh sync           # rebuild master index across all projects
+#   ./ai-memory.sh doctor [PROJ] [--fix|--force]  # health-check the e4 install
 #
 # Configure these or set as env vars:
 VAULT="${AI_VAULT:-$HOME/AI-Vault}"
@@ -32,6 +33,11 @@ case "$cmd" in
   sync)
     python3 "$PYDIR/create_dashboard.py" --vault "$VAULT" --rebuild-index --projects-root "$PROJECTS_ROOT"
     ;;
+  doctor)
+    proj="."
+    if [ $# -gt 0 ] && [ "${1#--}" = "$1" ]; then proj="$1"; shift; fi
+    python3 "$PYDIR/e4_doctor.py" --project "$proj" "$@"
+    ;;
   *)
     cat <<USAGE
 ai-memory.sh — memory maintenance
@@ -41,6 +47,8 @@ Commands:
   dashboard PROJ    Rebuild project dashboard + master index
   archive PROJ      Archive completed tasks for PROJ
   sync              Rebuild master index across all projects
+  doctor [PROJ] [--fix|--force]
+                    Health-check hooks, settings, LSP binaries (PROJ defaults to .)
 
 Env:
   AI_VAULT=$VAULT

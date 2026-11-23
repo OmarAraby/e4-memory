@@ -101,8 +101,31 @@ Dependency-free Python (stdlib only), with Bash + PowerShell wrappers.
 | New task / change status | `python automation/python/e4_task.py new "Title"` · `... set-status <TASK-id> in-progress --note "..."` |
 | Session-file draft | `python automation/python/e4_session.py draft --note "..."` |
 | Smoke test (temp dir, touches nothing real) | `python automation/python/smoke_test.py` |
+| Health check | `python automation/python/e4_doctor.py [--project <repo>] [--fix \| --force]` |
 
-Windows wrappers: `automation/powershell/Ai-Memory.ps1 {daily|dashboard|archive|sync}`.
+Windows wrappers: `automation/powershell/Ai-Memory.ps1 {daily|dashboard|archive|sync|doctor}`.
+
+### `e4_doctor.py` — health check
+
+Run it after installing or updating e4, or when a hook misbehaves. It checks `~/.claude` and the
+project (default: the current directory) and prints one `PASS`/`WARN`/`FAIL` line per finding;
+the exit code is 1 if anything FAILs.
+
+| Check | Catches |
+|---|---|
+| tools | `git`/`python3`/`bash` missing, or `bash` resolving to WSL instead of Git Bash |
+| settings | a `settings.json` that isn't valid JSON (Claude Code silently ignores the whole file) |
+| hook wiring | the same hook registered more than once (user + project), or a registered script that doesn't exist |
+| hook drift | installed hooks that differ from this repo, traced to the commit/branch they came from |
+| line endings | CRLF `.sh` hooks (bash fails on them) |
+| lsp | an enabled LSP plugin whose server binary (e.g. `csharp-ls`) isn't on PATH |
+| env / project | `AI_*` vars pointing to missing paths; a project wiring e4 hooks without `.ai-memory/` |
+
+`--fix` converts CRLF hooks to LF and updates installed hooks that are an **older version from this
+checkout's history**. A hook that matches an unmerged branch or no commit at all may be newer, so
+it is only reported; `--force` overwrites those too. Every overwritten file is backed up to
+`~/.claude/hooks/backup-<timestamp>/`. Settings files are never edited.
+Tests: `python automation/python/test_e4_doctor.py`.
 
 ## Repository layout
 
