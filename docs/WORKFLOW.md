@@ -151,7 +151,7 @@ the generated `active-tasks.md` and status changes, which go through `e4_task.py
   `progress.md`; `archive_completed_tasks` can move the file to `~/AI-Vault/Archive/tasks/`.
 
 ### Documentation rules
-- Public functions get docstrings/JSDoc; modules get a top-of-file purpose comment.
+- Comments are minimal: explain the *why* only; doc comments only on public contracts whose name isn't enough. No file-header comments.
 - Update the project README when adding setup steps or env vars.
 - Significant architectural changes require an ADR in `decisions.md`.
 - Suggest a note in `~/AI-Vault/Knowledge/` when you learn something broadly reusable.
