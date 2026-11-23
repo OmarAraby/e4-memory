@@ -7,13 +7,15 @@
   .\Ai-Memory.ps1 dashboard C:\code\myapp
   .\Ai-Memory.ps1 archive C:\code\myapp
   .\Ai-Memory.ps1 sync
+  .\Ai-Memory.ps1 doctor C:\code\myapp --fix
 
 .NOTES
   Set $env:AI_VAULT and $env:AI_PROJECTS_ROOT, or edit defaults below.
 #>
 param(
   [Parameter(Position=0)][string]$Command = "help",
-  [Parameter(Position=1)][string]$Project
+  [Parameter(Position=1)][string]$Project,
+  [Parameter(Position=2, ValueFromRemainingArguments=$true)][string[]]$Rest
 )
 
 $Vault = if ($env:AI_VAULT) { $env:AI_VAULT } else { Join-Path $HOME "AI-Vault" }
@@ -36,6 +38,14 @@ switch ($Command) {
   "sync" {
     python "$PyDir\create_dashboard.py" --vault $Vault --rebuild-index --projects-root $ProjectsRoot
   }
+  "doctor" {
+    # `doctor --fix` binds --fix to $Project, so treat a leading "--" value as a flag.
+    $flags = @($Rest | Where-Object { $_ })
+    $proj = "."
+    if ($Project -like "--*") { $flags = @($Project) + $flags } elseif ($Project) { $proj = $Project }
+    python "$PyDir\e4_doctor.py" --project $proj @flags
+    exit $LASTEXITCODE
+  }
   default {
     @"
 Ai-Memory.ps1 — memory maintenance
@@ -45,6 +55,8 @@ Commands:
   dashboard PROJ    Rebuild project dashboard + master index
   archive PROJ      Archive completed tasks for PROJ
   sync              Rebuild master index across all projects
+  doctor [PROJ] [--fix|--force]
+                    Health-check hooks, settings, LSP binaries (PROJ defaults to .)
 
 Env:
   AI_VAULT          = $Vault
