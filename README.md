@@ -55,7 +55,7 @@ Wired in `.claude/settings.json`:
 
 - **SessionStart** → injects the current memory summary into context on every open/resume.
 - **SessionEnd** → drops a breadcrumb if you forgot `/e4:end-session`, then archives + refreshes the daily roll-up.
-- **Stop** → a one-time gentle nudge to save when there's uncommitted work and no log entry yet.
+- **Stop** → a one-time gentle nudge to save when there's uncommitted work and no log entry yet; and, when a change adds a new dependency (package, project reference, compose image) without an ADR, one line offering to record it in `decisions.md` (version bumps are ignored).
 
 A `SessionEnd` hook can't write an intelligent summary (the model is already done) — that's why the summary is a *command* and the load/backstop are *hooks*.
 

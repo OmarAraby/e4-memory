@@ -8,6 +8,7 @@ Copy the `.claude/` directory here into your project root (or merge into an exis
 Contents:
 - `.claude/commands/e4/` → slash commands: /e4:init, /e4:end-session, /e4:resume, /e4:new-task
 - `.claude/hooks/`     → session_start.sh, session_end.sh, stop_reminder.sh,
+                         adr_nudge.py (Stop: offers an ADR when a change adds a new dependency; version bumps ignored),
                          e4.py (launcher the /e4:* commands call to run the automation scripts),
                          context_nudge.py (UserPromptSubmit: suggests end-session + /clear on big contexts / task switches),
                          read_guard.py (PreToolUse on Read/Grep/Glob: denies lockfiles, build dirs, old sessions, >200 KB reads),

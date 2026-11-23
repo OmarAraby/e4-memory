@@ -45,6 +45,11 @@
             "type": "command",
             "command": "bash .claude/hooks/stop_reminder.sh",
             "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/adr_nudge.py",
+            "timeout": 15
           }
         ]
       }
