@@ -40,7 +40,7 @@ A command is just a markdown file. **The filename becomes the command name**, an
 - `model:` — the model for the rest of that turn: an alias (`sonnet`, `haiku`, `opus`), a full model ID, or `inherit`.
 
 **Which model each e4 command uses.** The bookkeeping now happens in scripts, so the commands pin
-cheaper models: `/e4:end-session` and `/e4:resume` → `sonnet` (they summarise), `/e4:new-task` and
+cheaper models: `/e4:end-session`, `/e4:resume` and `/e4:pr` → `sonnet` (they summarise), `/e4:new-task` and
 `/e4:init` → `haiku` (mechanical). The pin lasts only for that turn; your next prompt is back on the
 session model. To override:
 - per command: edit its `model:` line — another alias, a full ID such as `claude-opus-5-5`, or
@@ -76,6 +76,10 @@ Claude Code (checked on 2.1.312) shape how that block is written — keep them i
 
 `/e4:init` installs `e4.py` with the other hook files. If a command fails with "Shell command failed",
 the project is missing `.claude/hooks/e4.py` — run `/e4:init` (it only adds missing files).
+`/e4:init` never overwrites an existing `e4.py`, so a project set up before `/e4:pr` existed answers
+`e4: error: usage: e4.py <task|session|status>`. Update it with
+`python automation/python/e4_doctor.py --project <repo> --fix` (it replaces hooks that are an older
+version of the repo's) or copy `claude-config/.claude/hooks/e4.py` over it.
 
 > Note: older guides show a `/project:command` prefix. Current Claude Code uses the bare `/command` form (filename → name). Subdirectories namespace commands (e.g. `commands/mem/save.md` → `/mem:save`).
 
@@ -163,6 +167,8 @@ cp -r ai-memory-system/claude-config/.claude/commands/e4  ~/.claude/commands/e4
 **`/e4:resume [full]`** — posts a Resume Summary. If the SessionStart summary is already in context it reads **no files** and summarises from that; it reads the memory files in order only when the injected summary is missing (hooks not installed) or you pass `full`.
 
 **`/e4:new-task <title> [-- detail]`** — `e4_task.py` allocates a timestamp-based ID (`TASK-<YYYYMMDD-HHMMSS>-<slug>`, never a sequential counter, so parallel branches can't collide), writes the task file, and regenerates `active-tasks.md` — no model tokens. The model only turns optional ` -- detail` into acceptance criteria. Status changes go through `e4_task.py set-status <id> <status> [--note]`, which also logs a dated checkpoint line.
+
+**`/e4:pr [create] [note]`** — writes the pull-request description from git and memory. `e4_pr.py facts` collects everything mechanical: the base branch (`origin/HEAD`, then `main`/`master`), commits since the branch point (trailers stripped), the size with generated files (lockfiles, migrations, snapshots) excluded and flagged if over the ~400-line guideline, files grouped by kind, ADRs added to `decisions.md`, `BREAKING` markers, tasks referenced by branch name, commits or session files (with their acceptance criteria), the TL;DR and `test_status` of session files on the branch, uncommitted changes, push state and any existing PR. The model writes only What / Why / Testing / Docs (plus Size, Breaking changes and Tasks when they apply) to `.git/e4/PR_BODY.md`, never invents test results, and flags gaps such as code without test changes. By default it only **drafts** and shows the text; `/e4:pr create` pushes the branch if needed and runs `gh pr create`, or `gh pr edit` when an open PR already exists. It never force-pushes or merges. Works in repos without `.ai-memory/` (memory sections are omitted).
 
 **`session_start.sh`** (hook) — every session, regenerates `active-tasks.md` from `tasks/*.md`, then prints a compact resume (~250 tokens on a typical project): Phase/Health/task counts (≤4 lines), the current task (≤5 lines), and only the **TL;DR + Next actions** of the newest *saved* session. This output **is** the resume — the contract tells Claude to open individual memory files only when the task needs them. If the newest session is an auto-breadcrumb or an unfilled draft, it adds one line saying so; Claude backfills it only if you ask (no unprompted git archaeology).
 

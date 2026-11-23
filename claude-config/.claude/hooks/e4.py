@@ -12,7 +12,7 @@ Why it exists (verified against Claude Code 2.1.312):
   * A non-zero exit aborts the whole command, so this launcher always exits 0 and reports
     failures on stdout, where the model can see and relay them.
 
-Usage:  python3 .claude/hooks/e4.py <task|session|status> [args...]   (`-` = read value from stdin)
+Usage:  python3 .claude/hooks/e4.py <task|session|status|pr> [args...]   (`-` = read value from stdin)
 Must not contain bookkeeping logic — that lives in the scripts it launches.
 """
 from __future__ import annotations
@@ -22,7 +22,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-TOOLS = {"task": "e4_task.py", "session": "e4_session.py", "status": "generate_status.py"}
+TOOLS = {"task": "e4_task.py", "session": "e4_session.py", "status": "generate_status.py", "pr": "e4_pr.py"}
 
 
 def search_dirs() -> list[Path]:

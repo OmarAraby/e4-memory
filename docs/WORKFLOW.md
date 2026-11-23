@@ -183,6 +183,7 @@ the generated `active-tasks.md` and status changes, which go through `e4_task.py
 | "checkpoint" / "wrap up" / `/e4:end-session` | Rule Set E via `e4_session.py draft` |
 | `/e4:init` | Scaffold `.ai-memory/`, hooks and `CLAUDE.md` (top-up only) |
 | `/e4:new-task <title> [-- detail]` | `e4_task.py new`; `active-tasks.md` regenerates |
+| "write the PR" / `/e4:pr [create]` | `e4_pr.py facts` → description in `.git/e4/PR_BODY.md`; `create` pushes + opens it |
 | "what's next?" | Current task + first next action from the injected summary |
 | "why did we…?" | Search `decisions.md` |
 | "status" | Summarize `progress.md` + the task counts |

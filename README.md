@@ -48,6 +48,7 @@ Installed per-project under `.claude/commands/e4/` (so the namespace — and the
 | `/e4:resume` | Re-read memory in order and post a Resume Summary |
 | `/e4:new-task <title>` | Create a tracked `tasks/TASK-<timestamp>-<slug>.md`; `active-tasks.md` regenerates from it |
 | `/e4:end-session` | The workhorse — pull live `git` state, write a new `sessions/` file, update progress/tasks/decisions |
+| `/e4:pr [create] [note]` | Draft the PR description from commits, tasks, sessions and ADRs; `create` pushes and opens (or updates) the PR |
 
 ## Hooks (the "doesn't rely on the model" guarantee)
 
@@ -102,6 +103,7 @@ Dependency-free Python (stdlib only), with Bash + PowerShell wrappers.
 | Session-file draft | `python automation/python/e4_session.py draft --note "..."` |
 | Smoke test (temp dir, touches nothing real) | `python automation/python/smoke_test.py` |
 | Health check | `python automation/python/e4_doctor.py [--project <repo>] [--fix \| --force]` |
+| PR facts sheet (used by `/e4:pr`) | `python automation/python/e4_pr.py facts [--project <repo>] [--base main]` |
 
 Windows wrappers: `automation/powershell/Ai-Memory.ps1 {daily|dashboard|archive|sync|doctor}`.
 
@@ -125,7 +127,7 @@ the exit code is 1 if anything FAILs.
 checkout's history**. A hook that matches an unmerged branch or no commit at all may be newer, so
 it is only reported; `--force` overwrites those too. Every overwritten file is backed up to
 `~/.claude/hooks/backup-<timestamp>/`. Settings files are never edited.
-Tests: `python automation/python/test_e4_doctor.py`.
+Tests: `python automation/python/test_e4_doctor.py`, `python automation/python/test_e4_pr.py`.
 
 ## Repository layout
 

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `D:\AI-Vault` is the **global Obsidian vault** for the **AI Memory System for Claude Code** — a persistent-memory system that gives Claude long-term memory across projects, sessions, and restarts. The full distribution currently ships as zip bundles in the root (`files.zip`, `files (1).zip`); `files (1).zip` is the newer, more complete bundle (adds `claude-config/` slash commands + hooks and `COMMANDS-AND-HOOKS.md`). Unpacking `vault-structure/` from the bundle into this directory is what turns it into the live vault.
 
-This is a **docs + templates + automation-scripts** project, not a compiled application. There is no build step. The Python automation is stdlib-only (no dependencies, no package manifest), the Bash/PowerShell scripts are thin wrappers over it, and the only tests are stdlib scripts next to the code (`python automation/python/smoke_test.py`, `python automation/python/test_e4_doctor.py`) — do not invent other build/lint/test commands.
+This is a **docs + templates + automation-scripts** project, not a compiled application. There is no build step. The Python automation is stdlib-only (no dependencies, no package manifest), the Bash/PowerShell scripts are thin wrappers over it, and the only tests are stdlib scripts next to the code (`python automation/python/smoke_test.py`, `python automation/python/test_e4_doctor.py`, `python automation/python/test_e4_pr.py`) — do not invent other build/lint/test commands.
 
 ## The two-layer memory model (the core architecture)
 
@@ -21,7 +21,7 @@ The vault `Projects/` notes are **indexes/dashboards** that link into each repo'
 
 The system deliberately divides work between two mechanisms — see `docs/COMMANDS-AND-HOOKS.md`:
 
-- **Slash commands** (`claude-config/.claude/commands/e4/*.md`, namespaced `e4:`) produce *content* that needs model intelligence: `/e4:init [name]`, `/e4:end-session [note]` (the workhorse — pulls live `git status`/`diff`/`log`, then writes a **new** structured file to `.ai-memory/sessions/` and updates `progress.md`/`tasks/`/`decisions.md`), `/e4:resume`, `/e4:new-task <title>`.
+- **Slash commands** (`claude-config/.claude/commands/e4/*.md`, namespaced `e4:`) produce *content* that needs model intelligence: `/e4:init [name]`, `/e4:end-session [note]` (the workhorse — pulls live `git status`/`diff`/`log`, then writes a **new** structured file to `.ai-memory/sessions/` and updates `progress.md`/`tasks/`/`decisions.md`), `/e4:resume`, `/e4:new-task <title>`, `/e4:pr [create]` (PR description from `e4_pr.py facts` + memory; drafts unless `create`).
 - **Hooks** (`claude-config/.claude/settings.json` → `.claude/hooks/*.sh`) provide *mechanical guarantees* that must not depend on the model: `SessionStart` auto-injects memory into context (its stdout is the load mechanism); `SessionEnd` leaves a breadcrumb file in `sessions/` if `/e4:end-session` was skipped, then backgrounds archiving + daily roll-up; `Stop` optionally nudges to run `/e4:end-session`. A `PreToolUse` guard (`guard-destructive-git.py`) blocks destructive git commands and secret commits.
 
 A `SessionEnd` hook **cannot** make the model write a summary (the session is ending) — that is exactly why the intelligent summary is a command and the load/backstop is a hook. Hooks must finish within their `timeout` or you get `Hook cancelled`; push slow work into a backgrounded subshell that returns immediately.
