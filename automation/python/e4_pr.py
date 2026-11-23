@@ -38,8 +38,10 @@ GENERATED = ["*.lock", "package-lock.json", "pnpm-lock.yaml", "go.sum", "poetry.
 GROUPS = [("tests", re.compile(r"(^|/)(tests?|spec|__tests__)/|(_test|\.test|\.spec|Tests?)\.\w+$|"
                                r"(^|/)test_[^/]+$", re.IGNORECASE)),
           ("memory", re.compile(r"^\.ai-memory/")),
+          ("code", re.compile(r"\.(py|sh|ps1|cs|ts|tsx|js|jsx|go|java|kt|rs|rb|php|sql|c|cpp|h)$", re.IGNORECASE)),
           ("docs", re.compile(r"\.md$|^docs/", re.IGNORECASE)),
-          ("config", re.compile(r"(^|/)\.|\.(json|ya?ml|toml|ini|csproj|props|sln)$|"
+          # Dotfiles (.gitignore, .editorconfig), not every file under a dot-directory like .claude/.
+          ("config", re.compile(r"(^|/)\.[^/]+$|\.(json|ya?ml|toml|ini|csproj|props|sln)$|"
                                 r"(^|/)(Dockerfile|Makefile)$", re.IGNORECASE))]
 
 
@@ -105,6 +107,18 @@ def field(text: str, name: str) -> str:
     return (m.group(1) or m.group(2)).strip() if m else ""
 
 
+def push_state(root: Path, branch: str) -> str:
+    """Whether origin/<branch> exists and is up to date. The configured upstream is not trusted:
+    `git switch -c feat origin/main` sets origin/main as upstream although feat was never pushed."""
+    remote = f"origin/{branch}"
+    if not ref_exists(root, remote):
+        upstream = git(root, "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}").strip()
+        hint = f" (its upstream is {upstream}, a different branch)" if upstream else ""
+        return f"no upstream yet — {remote} does not exist{hint}"
+    ahead = git(root, "rev-list", "--count", f"{remote}..HEAD").strip() or "0"
+    return f"yes ({remote}), {ahead} local commit(s) not pushed"
+
+
 def gh_pr(root: Path) -> str:
     try:
         proc = subprocess.run(["gh", "pr", "view", "--json", "number,url,state"], cwd=root,
@@ -151,13 +165,9 @@ def cmd_facts(root: Path, base_arg: str, note: str) -> int:
     for p, a, d in rows:
         groups.setdefault(group_of(p), []).append(f"{p} (+{a}/-{d})" + (" [generated]" if is_generated(p) else ""))
 
-    upstream = git(root, "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}").strip()
-    ahead = git(root, "rev-list", "--count", "@{u}..HEAD").strip() if upstream else ""
     dirty = git(root, "status", "--porcelain").strip()
-
     out = [f"Mode: {mode}", f"Branch: {branch}", f"Base: {base}", f"Body file: {body_path}",
-           f"Existing PR: {gh_pr(root)}",
-           "Pushed: " + (f"yes ({upstream}), {ahead} local commit(s) not pushed" if upstream else "no upstream yet")]
+           f"Existing PR: {gh_pr(root)}", f"Pushed: {push_state(root, branch)}"]
     if dirty:
         out.append("WARNING: uncommitted changes exist — they will NOT be in this PR.")
     if note:

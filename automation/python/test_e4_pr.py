@@ -98,6 +98,31 @@ class PrFactsTest(unittest.TestCase):
         self.assertIn("OVER the ~400-line PR guideline", out)
         self.assertIn("feat(api)!: drop the v1 endpoints", out.split("## Breaking changes")[1])
 
+    def test_code_in_dot_directory_is_code_and_dotfiles_are_config(self):
+        write(self.repo, ".claude/hooks/e4.py", "print('x')\n")
+        write(self.repo, ".editorconfig", "root = true\n")
+        git(self.repo, "add", "-A")
+        git(self.repo, "commit", "-q", "-m", "chore: hooks")
+        _, out = self.facts()
+        self.assertIn("[code] .claude/hooks/e4.py", out)
+        self.assertIn("[config] .editorconfig", out)
+
+    def test_branch_tracking_the_base_is_not_reported_as_pushed(self):
+        origin = Path(self.tmp.name) / "origin.git"
+        git(Path(self.tmp.name), "init", "-q", "--bare", str(origin))
+        git(self.repo, "remote", "add", "origin", str(origin))
+        git(self.repo, "push", "-q", "origin", "main")
+        git(self.repo, "switch", "-q", "-c", "feature/tracks-main", "--track", "origin/main")
+        write(self.repo, "x.py", "x = 1\n")
+        git(self.repo, "add", "-A")
+        git(self.repo, "commit", "-q", "-m", "feat: x")
+        _, out = self.facts()
+        self.assertIn("Pushed: no upstream yet — origin/feature/tracks-main does not exist "
+                      "(its upstream is origin/main, a different branch)", out)
+        git(self.repo, "push", "-q", "origin", "feature/tracks-main")
+        _, out = self.facts()
+        self.assertIn("Pushed: yes (origin/feature/tracks-main), 0 local commit(s) not pushed", out)
+
     def test_uncommitted_changes_warn(self):
         write(self.repo, "app.py", "changed\n")
         _, out = self.facts()
