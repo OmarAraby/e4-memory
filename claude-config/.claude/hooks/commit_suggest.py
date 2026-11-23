@@ -7,12 +7,14 @@ message. It never commits — committing stays an explicit user request.
 
 "Changed files this turn" = an Edit/Write/MultiEdit/NotebookEdit tool call since the last real
 user prompt (read from the transcript), or a shell call that changed the working-tree
-fingerprint since the previous Stop. Fail-open: any error -> exit 0 silently.
+fingerprint since the previous Stop. Stays silent if the reply already ends with a suggestion
+(text after the turn's last change has `git commit -m` or a "Suggested commit" heading). Fail-open: any error -> exit 0.
 Stdlib only.
 """
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -20,12 +22,20 @@ import tempfile
 EDIT_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
 SHELL_TOOLS = {"Bash", "PowerShell"}
 
+CHANGE_TOOLS = EDIT_TOOLS | SHELL_TOOLS
+SUGGESTION_RE = re.compile(r"git commit -m|^#+\s*Suggested commit", re.IGNORECASE | re.MULTILINE)
+
+# Mirrors "Suggested commit format" in User/coding-standards.md — keep the two in sync.
 REASON = (
-    "You changed files in this turn and they are not committed. Finish your reply with a "
-    "suggested commit for these changes: a Conventional Commits message "
-    "(`type(scope): subject`, plus a short body if the *why* isn't obvious) and the exact "
-    "`git add <files>` / `git commit` commands. Only suggest it — do NOT run the commit. "
-    "If the changes are not yet a coherent unit (work in progress), say so in one line instead."
+    "You changed files in this turn and they are not committed. End your reply with ONE suggested "
+    "commit in this exact layout (do NOT run it):\n"
+    "### Suggested commit (not run)\n"
+    "**type(scope): subject**  (Conventional Commits)\n"
+    "Why: one or two lines on the reason, not a list of edits.\n"
+    "Files (N):\n- path/one\n- path/two\n"
+    "then one ```bash block: one `git add <repo-relative path>` line per file, then "
+    "`git commit -m \"type(scope): subject\" -m \"Why line(s).\"`.\n"
+    "Unrelated changes: one such block per commit. Work in progress: say so in one line instead."
 )
 
 
@@ -64,8 +74,8 @@ def is_real_prompt(entry):
     return False
 
 
-def tools_used_this_turn(transcript_path):
-    """Tool names called since the last real user prompt; None if the transcript is unreadable."""
+def read_turn(transcript_path):
+    """Assistant content blocks since the last real user prompt; None if unreadable."""
     try:
         with open(transcript_path, encoding="utf-8") as f:
             entries = [json.loads(line) for line in f if line.strip()]
@@ -75,14 +85,24 @@ def tools_used_this_turn(transcript_path):
     for i, e in enumerate(entries):
         if is_real_prompt(e):
             start = i
-    names = set()
+    blocks = []
     for e in entries[start:]:
-        if e.get("type") != "assistant":
-            continue
-        for b in (e.get("message") or {}).get("content") or []:
-            if isinstance(b, dict) and b.get("type") == "tool_use":
-                names.add(b.get("name"))
-    return names
+        if e.get("type") == "assistant":
+            blocks += [b for b in (e.get("message") or {}).get("content") or [] if isinstance(b, dict)]
+    return blocks
+
+
+def already_suggested(blocks, last_message):
+    """True if the reply already shows a commit suggestion after the turn's last change."""
+    if isinstance(last_message, str) and SUGGESTION_RE.search(last_message):
+        return True
+    texts = []
+    for b in blocks or []:
+        if b.get("type") == "tool_use" and b.get("name") in CHANGE_TOOLS:
+            texts = []  # a suggestion made before a later change doesn't count
+        elif b.get("type") == "text":
+            texts.append(b.get("text") or "")
+    return bool(SUGGESTION_RE.search("\n".join(texts)))
 
 
 def main():
@@ -116,11 +136,14 @@ def main():
         changed = False
     else:
         current = fingerprint(top, status)
-        tools = tools_used_this_turn(payload.get("transcript_path") or "")
+        blocks = read_turn(payload.get("transcript_path") or "")
+        tools = None if blocks is None else {b.get("name") for b in blocks if b.get("type") == "tool_use"}
         edited = bool(tools and tools & EDIT_TOOLS)
         shelled = tools is None or bool(tools & SHELL_TOOLS)
         # Shell-made changes count only if the tree differs from what we saw at the last Stop.
         changed = edited or (shelled and previous is not None and current != previous)
+        if changed and already_suggested(blocks, payload.get("last_assistant_message")):
+            changed = False  # Claude already ended with a suggestion; don't make it repeat
 
     try:
         with open(state, "w", encoding="utf-8") as f:
