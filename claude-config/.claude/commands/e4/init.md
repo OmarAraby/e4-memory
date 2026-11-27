@@ -57,11 +57,13 @@ Find the hook source (first match wins):
 If a source is found:
 1. Copy each of these into `./.claude/hooks/` **only if that file is missing** (never overwrite):
    `session_start.sh`, `session_end.sh`, `stop_reminder.sh`, `e4.py` (the launcher the `/e4:*`
-   commands call), `context_nudge.py`, `read_guard.py`.
+   commands call), `context_nudge.py`, `read_guard.py`, `adr_nudge.py`.
 2. Install the hooks config into `./.claude/settings.json`:
    - If `settings.json` does NOT exist, copy the source `settings.json`.
-   - If it DOES exist, merge in only the hook events that are missing from its `hooks` key — never
-     overwrite other keys (e.g. `permissions`) or existing hook entries. Leave any `settings.local.json` untouched.
+   - If it DOES exist, add each source hook entry whose script (e.g. `adr_nudge.py`) is not yet
+     referenced under the same event — append it to that event's array, creating the event if
+     needed. Never overwrite other keys (e.g. `permissions`) or change existing hook entries.
+     Leave any `settings.local.json` untouched.
 3. Tell the user (Windows): the hooks run via **Git Bash** (`bash`) and call **`python3`** — both must be on PATH.
 
 If no hook source is found, tell the user where the hooks live and continue without failing.

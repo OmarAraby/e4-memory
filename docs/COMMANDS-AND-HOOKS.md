@@ -112,7 +112,8 @@ Config shape:
       { "hooks": [ { "type": "command", "command": "bash .claude/hooks/session_end.sh", "timeout": 60 } ] }
     ],
     "Stop": [
-      { "hooks": [ { "type": "command", "command": "bash .claude/hooks/stop_reminder.sh", "timeout": 15 } ] }
+      { "hooks": [ { "type": "command", "command": "bash .claude/hooks/stop_reminder.sh", "timeout": 15 },
+                   { "type": "command", "command": "python3 .claude/hooks/adr_nudge.py", "timeout": 15 } ] }
     ]
   }
 }
@@ -181,6 +182,8 @@ cp -r ai-memory-system/claude-config/.claude/commands/e4  ~/.claude/commands/e4
 The `PreToolUse` block in `settings.json` keeps one entry per line, so enabling `guard-destructive-git.py` later is a one-line addition (the exact line is in the file's `$comment`).
 
 **`stop_reminder.sh`** (hook, optional) — once per session, if there are uncommitted changes and no session file logged today, injects a one-line nudge to run `/e4:end-session`. Soft by default; a commented block shows how to make it hard-block instead (subject to the Stop-hook block cap that prevents loops).
+
+**`adr_nudge.py`** (hook, `Stop`) — the coding standards require an ADR when a change introduces a new library, datastore or project reference, and nothing checked that. At the end of a reply it diffs the working tree against `HEAD` and reads dependency *names* from the changed manifests: `package.json`, `composer.json`, `*.csproj` / `*.fsproj` (`PackageReference` and `ProjectReference`), `Directory.Packages.props`, `packages.config`, `go.mod` (`// indirect` ignored), `requirements*.txt`, `pyproject.toml`, `Cargo.toml`, `Gemfile`, `build.gradle*`, `pom.xml`, and `image:` lines in `docker-compose*.yml` / `compose*.yml`. A name counts as new only if it was added and not removed, so **version bumps stay silent**. If something new appears and `.ai-memory/decisions.md` is unchanged, it blocks the stop once and asks Claude to end with one line offering to record an ADR — Claude must not write it unless you agree. Each dependency is mentioned once per session. Silent without `.ai-memory/`, when `decisions.md` is already modified, or with `E4_ADR_NUDGE=off`; any error exits 0. Several Stop hooks may block on the same reply (e.g. with a commit-suggestion hook); Claude answers them together. Tests: `python automation/python/test_adr_nudge.py`.
 
 ---
 
