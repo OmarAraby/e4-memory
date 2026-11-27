@@ -31,10 +31,10 @@ REASON = (
     "commit in this exact layout (do NOT run it):\n"
     "### Suggested commit (not run)\n"
     "**type(scope): subject**  (Conventional Commits)\n"
-    "Why: one or two lines on the reason, not a list of edits.\n"
+    "One or two plain lines on the reason, not a list of edits (no `Why:` label).\n"
     "Files (N):\n- path/one\n- path/two\n"
     "then one ```bash block: one `git add <repo-relative path>` line per file, then "
-    "`git commit -m \"type(scope): subject\" -m \"Why line(s).\"`.\n"
+    "`git commit -m \"type(scope): subject\" -m \"Reason line(s).\"`.\n"
     "Unrelated changes: one such block per commit. Work in progress: say so in one line instead."
 )
 
